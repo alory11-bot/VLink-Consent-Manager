@@ -130,6 +130,10 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
                 val deviceId = msg.optString("deviceId")
                 val validDeviceId = runCatching { UUID.fromString(deviceId).toString() == deviceId }.getOrDefault(false)
                 if (!validDeviceId) return failPeer(p.id, "invalid device identity")
+                if ((p.remoteNonce != null && p.remoteNonce != n) ||
+                    (p.remoteDeviceId != null && p.remoteDeviceId != deviceId)) {
+                    return failPeer(p.id, "peer identity changed during handshake")
+                }
                 p.remoteNonce = n
                 p.remoteDeviceId = deviceId
                 sendProof(p)
