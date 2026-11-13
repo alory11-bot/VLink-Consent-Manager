@@ -123,6 +123,7 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     }
 
     private fun handleControl(p: Peer, raw: String) {
+        if (raw.toByteArray(Charsets.UTF_8).size > 16 * 1024) return failPeer(p.id, "control message too large")
         val msg = runCatching { JSONObject(raw) }.getOrNull() ?: return failPeer(p.id, "invalid control")
         when (msg.optString("kind")) {
             "hello" -> {
@@ -199,6 +200,13 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         synchronized(peer) {
             val previous = peer.receivedCapabilityRevisions[message.requestId] ?: 0L
             if (message.revision <= previous) return
+            val validSequence = if (master) {
+                (previous == 0L && message.type == CapabilityMessageType.DECISION && message.revision == 2L) ||
+                    (previous == 2L && message.type == CapabilityMessageType.REVOKE && message.revision == 3L)
+            } else {
+                previous == 0L && message.type == CapabilityMessageType.REQUEST && message.revision == 1L
+            }
+            if (!validSequence) return failPeer(peer.id, "invalid capability revision sequence")
             peer.receivedCapabilityRevisions[message.requestId] = message.revision
         }
         listener.onCapabilityMessage(peer.id, message)
