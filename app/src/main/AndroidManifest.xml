@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Nearby Connections direct radio discovery and transport permissions. -->
+    <!-- Internet access for WebRTC signaling, STUN, and direct P2P transport. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Legacy Nearby permissions are temporary until the UI transport migration is complete. -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
