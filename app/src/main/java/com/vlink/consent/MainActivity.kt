@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         store = SecureStore(this)
         setContent {
-            val colors = darkColorScheme(
+            val colors = lightColorScheme(
                 primary = Brand,
                 onPrimary = Color.White,
                 background = Canvas,
@@ -153,24 +153,13 @@ class MainActivity : ComponentActivity() {
 
                 when (selectedPage) {
                     "home" -> {
-                        SectionTitle("نقش دستگاه", "نقش این گوشی را برای گردش کار محلی انتخاب کنید")
-                        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-                            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    RoleButton("کنترل‌کننده", role == "controller", Modifier.weight(1f)) {
-                                        role = "controller"; store.put("role", role)
-                                        log("ROLE", "نقش کنترل‌کننده انتخاب شد")
-                                    }
-                                    RoleButton("دستگاه همراه", role == "companion", Modifier.weight(1f)) {
-                                        role = "companion"; store.put("role", role)
-                                        log("ROLE", "نقش دستگاه همراه انتخاب شد")
-                                    }
+                        GlassPanel {
+                            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(if (role == "controller") "حالت مستر" else "حالت اسلیو", color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text(if (role == "controller") "مدیریت دعوت‌ها و دستگاه‌های همراه" else "پیوستن آگاهانه به یک کنترل‌کننده", color = Color(0xFFB9C9E0), style = MaterialTheme.typography.bodySmall)
                                 }
-                                Text(
-                                    if (role.isBlank()) "هنوز نقشی انتخاب نشده است."
-                                    else "نقش انتخاب‌شده: " + if (role == "controller") "کنترل‌کننده" else "دستگاه همراه",
-                                    color = Muted, style = MaterialTheme.typography.bodySmall
-                                )
+                                OutlinedButton(onClick = { showRolePicker = true }, shape = RoundedCornerShape(14.dp)) { Text("تغییر نقش") }
                             }
                         }
 
@@ -347,6 +336,13 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    private fun GlassPanel(content: @Composable ColumnScope.() -> Unit) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF))))
+            .border(1.dp, GlassLine, RoundedCornerShape(24.dp)), content = content)
+    }
+
+    @Composable
     private fun RoleGlassCard(title: String, subtitle: String, symbol: String, accent: Color, onClick: () -> Unit) {
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0x24FFFFFF))
             .border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(22.dp)).clickable(onClick = onClick).padding(17.dp),
@@ -368,8 +364,8 @@ class MainActivity : ComponentActivity() {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 Box(Modifier.width(4.dp).height(30.dp).clip(CircleShape).background(Brand))
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Navy)
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9C9E0))
                 }
             }
         }
