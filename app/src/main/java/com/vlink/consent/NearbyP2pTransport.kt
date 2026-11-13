@@ -2,6 +2,7 @@ package com.vlink.consent
 
 import android.content.Context
 import com.google.android.gms.nearby.Nearby
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.ConnectionInfo
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback
@@ -115,12 +116,12 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
             val options = AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
             client.startAdvertising(localName, SERVICE_ID, lifecycleCallback, options)
                 .addOnSuccessListener { listener.onStatus("مستر آماده اتصال مستقیم است.") }
-                .addOnFailureListener { running = false; listener.onFailure("advertising", it.statusCode) }
+                .addOnFailureListener { running = false; listener.onFailure("advertising", (it as? ApiException)?.statusCode ?: -1) }
         } else {
             val options = DiscoveryOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
             client.startDiscovery(SERVICE_ID, discoveryCallback, options)
                 .addOnSuccessListener { listener.onStatus("اسلیو در حال جست‌وجوی مسترهای نزدیک است.") }
-                .addOnFailureListener { running = false; listener.onFailure("discovery", it.statusCode) }
+                .addOnFailureListener { running = false; listener.onFailure("discovery", (it as? ApiException)?.statusCode ?: -1) }
         }
     }
 
