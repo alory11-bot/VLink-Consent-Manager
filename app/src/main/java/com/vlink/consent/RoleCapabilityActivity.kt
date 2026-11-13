@@ -162,7 +162,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
                     if (info.isNotBlank()) Text(info, color = RoleBlue, style = MaterialTheme.typography.bodySmall)
                     InfoCard("مرز امنیتی نسخه آزمایشی",
-                        "این صفحه فقط وضعیت رضایت را ثبت می‌کند؛ فعال‌سازی دوربین، میکروفون، موقعیت یا اعلان‌ها انجام نمی‌شود و مجوز سیستمی اندروید درخواست نمی‌شود. برای اجرای واقعی هر قابلیت باید نشست امن و رضایت همان لحظه پیاده‌سازی شود.")
+                        "اتصال مستقیم برای کشف دستگاه‌ها از مجوزهای بلوتوث و دستگاه‌های نزدیک استفاده می‌کند. دوربین، میکروفون، موقعیت و اعلان‌ها هنوز فعال نشده‌اند و هرکدام به مجوز و رضایت مستقل نیاز دارند.")
                     OutlinedButton(onClick = { showRoleReset = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("تغییر نقش این گوشی")
                     }
@@ -176,7 +176,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                         Text(it.detail, color = RoleMuted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                Text("VLink • نسخه آزمایشی نقش و رضایت • بدون اتصال شبکه‌ای",
+                Text("VLink • نسخه آزمایشی ارتباط مستقیم P2P",
                     Modifier.fillMaxWidth().padding(vertical = 8.dp), color = RoleMuted,
                     textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
             }
@@ -384,12 +384,17 @@ class RoleCapabilityActivity : ComponentActivity() {
                     else "این گوشی اسلیو است و مسترهای نزدیک را پیدا می‌کند.",
                     color = RoleMuted, style = MaterialTheme.typography.bodySmall
                 )
-                Text("نوع ارتباط", fontWeight = FontWeight.SemiBold, color = RoleInk)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (multiPoint) OutlinedButton(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
-                    else Button(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
-                    if (multiPoint) Button(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
-                    else OutlinedButton(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
+                if (role == DeviceRole.MASTER) {
+                    Text("نوع ارتباط", fontWeight = FontWeight.SemiBold, color = RoleInk)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (multiPoint) OutlinedButton(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
+                        else Button(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
+                        if (multiPoint) Button(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
+                        else OutlinedButton(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
+                    }
+                } else {
+                    Text("اسلیو در هر نشست به یک مستر متصل می‌شود؛ انتخاب چندنقطه‌ای در سمت مستر انجام می‌شود.",
+                        color = RoleMuted, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(status, color = RoleBlue, style = MaterialTheme.typography.bodySmall)
                 if (peers.isNotEmpty()) {
