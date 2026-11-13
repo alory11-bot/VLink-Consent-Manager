@@ -1,8 +1,13 @@
 package com.vlink.consent
 
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -107,6 +112,8 @@ class RoleCapabilityActivity : ComponentActivity() {
                         if (roleName == "MASTER") "قابلیت‌های موردنیاز را درخواست کنید. هیچ دسترسی بدون تصمیم اسلیو مجاز نیست."
                         else "درخواست‌های دسترسی را بررسی کنید. اختیار تأیید، رد و لغو فقط در دست صاحب این گوشی است."
                     )
+                    DirectConnectionCard(if (roleName == "MASTER") DeviceRole.MASTER else DeviceRole.SLAVE)
+
                     if (roleName == "MASTER") {
                         val pending = states.values.count { it == CapabilityStatus.REQUESTED }
                         val granted = states.values.count { it == CapabilityStatus.GRANTED }
@@ -292,6 +299,156 @@ class RoleCapabilityActivity : ComponentActivity() {
                 Text(title, fontWeight = FontWeight.Bold, color = RoleInk)
                 Text(body, color = RoleMuted, style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+
+
+    @Composable
+    private fun DirectConnectionCard(role: DeviceRole) {
+        var status by remember { mutableStateOf("اتصال مستقیم هنوز شروع نشده است.") }
+        var isRunning by remember { mutableStateOf(false) }
+        var multiPoint by remember { mutableStateOf(false) }
+        var peers by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+        var approvalTitle by remember { mutableStateOf<String?>(null) }
+        var approvalDigits by remember { mutableStateOf("") }
+        var approvalAction by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
+
+        val transport = remember {
+            NearbyP2pTransport(this@RoleCapabilityActivity, object : NearbyP2pTransport.Listener {
+                override fun onStatus(message: String) { status = message }
+                override fun onPeerFound(endpointId: String, endpointName: String) { status = "دستگاه نزدیک پیدا شد: $endpointName" }
+                override fun onPeerLost(endpointId: String) { status = "دستگاه از محدوده کشف خارج شد." }
+                override fun onVerificationRequired(endpointId: String, endpointName: String, authenticationDigits: String, decide: (Boolean) -> Unit) {
+                    approvalTitle = endpointName
+                    approvalDigits = authenticationDigits
+                    approvalAction = decide
+                }
+                override fun onPeerConnected(endpointId: String, endpointName: String) {
+                    peers = peers.filterNot { it.first == endpointId } + (endpointId to endpointName)
+                    status = "اتصال مستقیم برقرار شد: $endpointName"
+                }
+                override fun onPeerDisconnected(endpointId: String) {
+                    peers = peers.filterNot { it.first == endpointId }
+                    status = "ارتباط یک دستگاه قطع شد."
+                }
+                override fun onBytesReceived(endpointId: String, bytes: ByteArray) { status = "داده مستقیم دریافت شد (\${bytes.size} بایت)." }
+                override fun onFailure(operation: String, statusCode: Int) {
+                    isRunning = false
+                    status = "اتصال برقرار نشد ($operation / $statusCode). واسطه‌ای استفاده نمی‌شود."
+                }
+            })
+        }
+
+        val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            if (result.values.all { it }) {
+                runCatching {
+                    transport.start(role, "VLink-\${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
+                    isRunning = true
+                }.onFailure { status = "شروع ارتباط ناموفق بود: \${it.localizedMessage}" }
+            } else {
+                status = "مجوزهای لازم برای کشف و اتصال مستقیم داده نشد."
+            }
+        }
+
+        fun startDirect() {
+            val required = buildList {
+                if (Build.VERSION.SDK_INT >= 31) {
+                    add(Manifest.permission.BLUETOOTH_ADVERTISE)
+                    add(Manifest.permission.BLUETOOTH_CONNECT)
+                    add(Manifest.permission.BLUETOOTH_SCAN)
+                } else if (Build.VERSION.SDK_INT >= 29) {
+                    add(Manifest.permission.ACCESS_FINE_LOCATION)
+                } else {
+                    add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                }
+                if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }.distinct()
+            val missing = required.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+            if (missing.isEmpty()) {
+                runCatching {
+                    transport.start(role, "VLink-\${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
+                    isRunning = true
+                }.onFailure { status = "شروع ارتباط ناموفق بود: \${it.localizedMessage}" }
+            } else {
+                permissionLauncher.launch(missing.toTypedArray())
+            }
+        }
+
+        DisposableEffect(transport) { onDispose { transport.stop() } }
+
+        Card(shape = RoundedCornerShape(20.dp)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("اتصال مستقیم دستگاه‌ها", fontWeight = FontWeight.Bold, color = RoleInk)
+                Text(
+                    if (role == DeviceRole.MASTER) "این گوشی مستر است و اتصال مستقیم اسلیوها را می‌پذیرد."
+                    else "این گوشی اسلیو است و مسترهای نزدیک را پیدا می‌کند.",
+                    color = RoleMuted, style = MaterialTheme.typography.bodySmall
+                )
+                Text("نوع ارتباط", fontWeight = FontWeight.SemiBold, color = RoleInk)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (multiPoint) OutlinedButton(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
+                    else Button(onClick = { multiPoint = false }, modifier = Modifier.weight(1f)) { Text("یک‌به‌یک") }
+                    if (multiPoint) Button(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
+                    else OutlinedButton(onClick = { multiPoint = true }, modifier = Modifier.weight(1f)) { Text("یک‌به‌چند") }
+                }
+                Text(status, color = RoleBlue, style = MaterialTheme.typography.bodySmall)
+                if (peers.isNotEmpty()) {
+                    Text("دستگاه‌های متصل: \${peers.size}", fontWeight = FontWeight.SemiBold, color = RoleInk)
+                    peers.forEach { (id, name) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, Modifier.weight(1f), color = RoleMuted)
+                            TextButton(onClick = { transport.disconnect(id) }) { Text("قطع") }
+                        }
+                    }
+                }
+                if (isRunning) {
+                    OutlinedButton(onClick = {
+                        transport.stop()
+                        isRunning = false
+                        peers = emptyList()
+                        status = "ارتباط مستقیم متوقف شد."
+                    }, modifier = Modifier.fillMaxWidth()) { Text("توقف کشف و اتصال") }
+                } else {
+                    Button(onClick = { startDirect() }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (role == DeviceRole.MASTER) "آماده‌سازی مستر برای اتصال" else "جست‌وجوی مسترهای نزدیک")
+                    }
+                }
+                Text("بدون سرور و بدون رله؛ اتصال فقط با پشتیبانی رادیویی، مجوزهای لازم و حضور دستگاه‌ها در محدوده ارتباط برقرار می‌شود.",
+                    color = RoleMuted, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+
+        if (approvalTitle != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    approvalAction?.invoke(false)
+                    approvalAction = null
+                    approvalTitle = null
+                },
+                title = { Text("تأیید اتصال مستقیم") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("دستگاه: $approvalTitle")
+                        Text("کد احراز هویت را با گوشی مقابل مقایسه کنید:")
+                        Text(approvalDigits, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("فقط اگر کد در هر دو گوشی یکسان است و دستگاه را می‌شناسید، اتصال را تأیید کنید.")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        approvalAction?.invoke(true)
+                        approvalAction = null
+                        approvalTitle = null
+                    }) { Text("کد یکسان است؛ تأیید") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        approvalAction?.invoke(false)
+                        approvalAction = null
+                        approvalTitle = null
+                    }) { Text("رد اتصال") }
+                }
+            )
         }
     }
 
