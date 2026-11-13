@@ -45,7 +45,8 @@ function createSignalingServer(options = {}) {
   function prune() {
     const t = now();
     for (const [id, room] of rooms) {
-      if (room.expiresAt <= t || room.peers.size === 0) {
+      // Invite expiry stops new joins; it must not tear down an already active P2P call.
+      if (room.peers.size === 0 || (room.expiresAt <= t && room.peers.size === 1)) {
         for (const peer of room.peers.values()) closePeer(peer.ws, 4001, "session expired");
         rooms.delete(id);
       }
