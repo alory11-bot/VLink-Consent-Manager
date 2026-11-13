@@ -93,3 +93,8 @@ These names are retained in the inventory. Their implementations cannot be audit
 ## Completion statement
 
 This review accounts for the original generated files and the manifest-only class references. It identifies the risky functions rather than pretending they were not part of the user's source. The original generator is archived as text in the recovery branch; none of its surveillance-oriented or arbitrary remote-control behavior has been activated in the current app.
+
+
+## Recovery implementation update
+
+Static, non-surveillance Android resources and build metadata were restored on the recovery branch. The original permissive cleartext policy was deliberately hardened to `cleartextTrafficPermitted=false`; the archived generator retains the original source text for audit. The active manifest was not expanded with the original surveillance permissions or service declarations. The restored wrapper properties do not constitute a complete Gradle Wrapper because the wrapper JAR is not present.
