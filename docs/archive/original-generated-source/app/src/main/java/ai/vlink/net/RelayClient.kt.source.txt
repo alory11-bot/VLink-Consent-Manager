@@ -1,0 +1,42 @@
+package ai.vlink.net
+
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
+
+class RelayClient(
+    private val relay: String,
+    private val masterToken: String,
+    private val onBlob: (deviceId: String, blob: ByteArray) -> Unit
+) {
+    private val http = OkHttpClient.Builder().pingInterval(25, TimeUnit.SECONDS).build()
+    private var ws: WebSocket? = null
+    @Volatile var alive = false
+
+    fun connect() {
+        if (alive) return
+        val base = relay.trimEnd('/').replaceFirst("https://", "wss://").replaceFirst("http://", "ws://")
+        ws = http.newWebSocket(Request.Builder()
+            .url(base + "/hub?role=master&token=" + masterToken).build(),
+            object : WebSocketListener() {
+                override fun onOpen(w: WebSocket, r: Response) { alive = true }
+                override fun onFailure(w: WebSocket, t: Throwable, r: Response?) { alive = false }
+                override fun onClosed(w: WebSocket, c: Int, r: String) { alive = false }
+                override fun onMessage(w: WebSocket, text: String) {
+                    val j = runCatching { JSONObject(text) }.getOrNull() ?: return
+                    if (j.has("blob")) onBlob(j.optString("src"), Crypto.unb64(j.getString("blob")))
+                }
+            })
+    }
+
+    fun send(deviceId: String, blob: ByteArray): Boolean {
+        if (!alive) return false
+        return ws?.send(JSONObject().put("to", deviceId).put("blob", Crypto.b64(blob)).toString()) ?: false
+    }
+
+    fun close() { alive = false; ws?.close(1000, null); ws = null }
+}
