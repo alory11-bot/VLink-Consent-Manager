@@ -4,18 +4,20 @@ VLink is a Persian RTL Android prototype for transparent, consent-first device o
 
 ## Included in this build
 
-- Kotlin + Jetpack Compose UI with RTL layout, role selection, home/events/about sections, status indicators and responsive cards.
-- Local one-time invitation code with cryptographically secure random generation and a five-minute validity window.
-- Explicit consent confirmation and a visible revoke action.
-- AES-GCM encrypted local preferences backed by Android Keystore.
-- Encrypted local audit history, capped at the latest 30 events.
-- A separately tested 256-bit QR invitation-envelope primitive with strict parsing and constant-time secret comparison.
-- Unit tests for invitation generation, QR-envelope parsing, expiry and malformed payload handling.
-- CI that runs unit tests, assembles a debug APK, generates a Gradle 8.9 Wrapper, and uploads an Android Studio project ZIP plus APK.
+- Role-first onboarding with distinct Master and Slave dashboards.
+- Master capability request controls and Slave approve/reject/revoke decisions.
+- Capability policy guards: only Master can request; only Slave can decide or revoke.
+- Independent consent states for file transfer, messaging, location sharing, camera sessions, microphone sessions and notification sharing.
+- Encrypted local preferences backed by Android Keystore and a local audit history capped at 30 events.
+- Existing local invitation-code flow and tested QR invitation-envelope primitives.
+- Unit tests for pairing primitives and Master/Slave permission boundaries.
+- CI unit tests, debug APK assembly, Android Studio ZIP packaging and artifact upload.
 
 ## Important implementation boundary
 
-This release is a **local prototype**, not yet a working cross-device product. The current screen's short invitation code is created and checked against local storage on the same installation. The 256-bit QR envelope is a tested protocol primitive but is not yet wired to QR rendering/scanning or a network transport. No remote peer authentication, TLS session, server-side replay prevention, cross-device session, or remote data transfer is implemented. UI copy explicitly communicates this limitation.
+This release is still a **local prototype**, not a working cross-device product. Role selection, capability requests and consent decisions are stored only on the current phone. They do not synchronize to a second device. The capability cards record authorization intent only; they do not activate camera, microphone, location, notification access or file transfer. No Android runtime permissions for those sensitive capabilities are requested by this prototype.
+
+The short invitation code is created and checked against local storage on the same installation. The 256-bit QR envelope is a tested protocol primitive but is not yet wired to QR rendering/scanning or a network transport. No remote peer authentication, TLS session, server-side replay prevention, cross-device session, or remote data transfer is implemented.
 
 The application intentionally excludes covert monitoring, keylogging, notification/SMS/call-log harvesting, hidden camera or microphone capture, stealth location tracking, remote wipe, and arbitrary remote command execution.
 
