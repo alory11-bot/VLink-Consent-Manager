@@ -27,7 +27,7 @@ This document is an inventory, not a claim that the original implementation has 
 | 9 | `app/src/main/res/values/strings.xml` | Restored | App string resources. |
 | 10 | `app/src/main/res/values/themes.xml` | Restored | Original dark Material theme. |
 | 11 | `app/src/main/res/values/colors.xml` | Restored | Original background color. |
-| 12 | `app/src/main/res/xml/net_sec.xml` | Restored (hardened) | Permits cleartext traffic globally. |
+| 12 | `app/src/main/res/xml/net_sec.xml` | Restored (hardened) | Original source allowed cleartext globally; restored active file explicitly denies cleartext. |
 | 13 | `app/src/main/res/xml/accessibility.xml` | Missing | Accessibility event and window-content configuration; sensitive. |
 | 14 | `app/src/main/res/xml/admin.xml` | Missing | Device-admin policies include wipe-data; sensitive. |
 | 15 | `app/src/main/res/drawable/ic_fg.xml` | Restored | Launcher foreground vector. |
