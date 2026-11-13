@@ -30,12 +30,8 @@ class PairingInviteTest {
 
     @Test fun secretComparisonRejectsDifferentValues() {
         val invite = PairingInvite.create(4_000_000L)
-        assertTrue(invite.matches(ByteArray(32).also { bytes ->
-            val parsed = PairingInvite.parseQrUri(invite.toQrUri())!!
-            val encoded = parsed.toQrUri().substringAfter("secret=").substringBefore("&")
-            val decoded = java.util.Base64.getUrlDecoder().decode(encoded)
-            decoded.copyInto(bytes)
-        }))
+        val parsed = PairingInvite.parseQrUri(invite.toQrUri())!!
+        assertTrue(invite.hasSameSecretAs(parsed))
         assertFalse(invite.matches(ByteArray(32)))
     }
 }
