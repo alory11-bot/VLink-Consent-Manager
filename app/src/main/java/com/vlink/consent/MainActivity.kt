@@ -4,12 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,12 +33,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Ink = Color(0xFF17243A)
-private val Muted = Color(0xFF66758B)
-private val Brand = Color(0xFF2457A6)
-private val Canvas = Color(0xFFF4F7FB)
-private val Mint = Color(0xFFE6F5EF)
-private val Amber = Color(0xFFFFF3DB)
+private val Ink = Color(0xFFF2F7FF)
+private val Muted = Color(0xFFB7C8DF)
+private val Brand = Color(0xFF2864D8)
+private val Canvas = Color(0xFF0B1428)
+private val GlassLine = Color(0x35FFFFFF)
+private val Mint = Color(0xFF174E4A)
+private val Amber = Color(0xFF62491F)
+private val Navy = Color(0xFF10243A)
+private val Line = Color(0x45FFFFFF)
 
 class MainActivity : ComponentActivity() {
     private lateinit var store: SecureStore
@@ -42,14 +50,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         store = SecureStore(this)
         setContent {
-            val colors = lightColorScheme(
-                primary = Brand,
-                onPrimary = Color.White,
+            val colors = darkColorScheme(
+                primary = Color(0xFF83B7FF),
+                onPrimary = Color(0xFF0B1B31),
                 background = Canvas,
-                surface = Color.White,
-                onSurface = Ink,
-                secondary = Color(0xFF16866B),
-                outline = Color(0xFFDCE4EF)
+                surface = Color(0xFF172943),
+                onSurface = Color(0xFFF2F7FF),
+                secondary = Color(0xFF75E0C2),
+                outline = Color(0xFF526B8C)
             )
             MaterialTheme(colorScheme = colors) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -87,6 +95,7 @@ class MainActivity : ComponentActivity() {
         var consent by remember { mutableStateOf(store.get("consent") == "yes") }
         var events by remember { mutableStateOf(readEvents()) }
         var showConsent by remember { mutableStateOf(false) }
+        var showRolePicker by remember { mutableStateOf(role.isBlank()) }
         var label by remember { mutableStateOf("") }
         var message by remember { mutableStateOf("") }
         var selectedPage by remember { mutableStateOf("home") }
@@ -101,35 +110,41 @@ class MainActivity : ComponentActivity() {
             PairingCode.isValidForWindow(invite, inviteAt, System.currentTimeMillis())
 
         Surface(Modifier.fillMaxSize(), color = Canvas) {
+            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0A1428), Color(0xFF142B4B), Color(0xFF17213C))))) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(
-                        Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(Brand),
+                        Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(Brush.linearGradient(listOf(Color(0xFF66DCC6), Color(0xFF538CFF)))),
                         contentAlignment = Alignment.Center
                     ) { Text("V", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium) }
                     Column(Modifier.weight(1f)) {
-                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Ink)
-                        Text("مدیریت اتصال با رضایت شفاف", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        Text("DEVICE TRUST & CONTROL  •  مدیریت امن دستگاه", style = MaterialTheme.typography.labelSmall, color = Color(0xFFB9C9E0))
                     }
                     StatusPill(if (consent) "رضایت فعال" else "بدون اتصال", if (consent) Mint else Amber)
                 }
 
                 Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Ink)
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().background(
+                        Brush.linearGradient(listOf(Color(0xFF27527A), Color(0xFF17324F), Color(0xFF1A2944))),
+                        RoundedCornerShape(26.dp)
+                    ).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp))
                 ) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("حریم خصوصی، تحت کنترل شماست", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                        Text(if (role == "controller") "مرکز کنترل مستر" else if (role == "companion") "پنل همراه اسلیو" else "مدیریت ارتباط دستگاه‌ها", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
                         Text(
-                            "دعوت‌نامه محلی بسازید، رضایت را آگاهانه ثبت کنید و هر زمان خواستید آن را لغو کنید.",
+                            if (role == "controller") "دعوت و مدیریت دستگاه‌های همراه در یک فضای امن و شفاف." else if (role == "companion") "وضعیت مشارکت و رضایت دستگاه در اختیار صاحب آن باقی می‌ماند." else "اتصال امن، کنترل شفاف و اختیار همیشگی صاحب دستگاه.",
                             color = Color(0xFFD8E2F0), style = MaterialTheme.typography.bodyMedium
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MetricChip("۳۰", "رویداد قابل نگهداری")
-                            MetricChip("۵ دقیقه", "اعتبار کد دعوت")
+                            MetricChip("۳۰", "رویداد اخیر")
+                            MetricChip("۵ دقیقه", "اعتبار دعوت")
                         }
                     }
                 }
@@ -142,36 +157,25 @@ class MainActivity : ComponentActivity() {
 
                 when (selectedPage) {
                     "home" -> {
-                        SectionTitle("نقش دستگاه", "نقش این گوشی را برای گردش کار محلی انتخاب کنید")
-                        Card(shape = RoundedCornerShape(20.dp)) {
-                            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    RoleButton("کنترل‌کننده", role == "controller", Modifier.weight(1f)) {
-                                        role = "controller"; store.put("role", role)
-                                        log("ROLE", "نقش کنترل‌کننده انتخاب شد")
-                                    }
-                                    RoleButton("دستگاه همراه", role == "companion", Modifier.weight(1f)) {
-                                        role = "companion"; store.put("role", role)
-                                        log("ROLE", "نقش دستگاه همراه انتخاب شد")
-                                    }
+                        GlassPanel {
+                            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(if (role == "controller") "حالت مستر" else "حالت اسلیو", color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text(if (role == "controller") "مدیریت دعوت‌ها و دستگاه‌های همراه" else "پیوستن آگاهانه به یک کنترل‌کننده", color = Color(0xFFB9C9E0), style = MaterialTheme.typography.bodySmall)
                                 }
-                                Text(
-                                    if (role.isBlank()) "هنوز نقشی انتخاب نشده است."
-                                    else "نقش انتخاب‌شده: " + if (role == "controller") "کنترل‌کننده" else "دستگاه همراه",
-                                    color = Muted, style = MaterialTheme.typography.bodySmall
-                                )
+                                OutlinedButton(onClick = { showRolePicker = true }, shape = RoundedCornerShape(14.dp)) { Text("تغییر نقش") }
                             }
                         }
 
                         if (role == "controller") {
                             SectionTitle("دعوت‌نامه یک‌بارمصرف", "کد محلی با اعتبار پنج دقیقه‌ای")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text("برای شروع فرایند آزمایشی، یک کد دعوت تولید کنید.", color = Muted)
                                     if (invite.isNotBlank()) {
                                         Box(
                                             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                                                .background(if (isInviteValid) Mint else Amber).padding(16.dp),
+                                                .background(if (isInviteValid) Color(0xFF174E4A) else Color(0xFF62491F)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(16.dp)).padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -201,7 +205,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             SectionTitle("ثبت رضایت", "ثبت نام دستگاه و تأیید صریح")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     OutlinedTextField(
                                         value = label, onValueChange = { label = it },
@@ -217,7 +221,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } else if (role == "companion") {
                             SectionTitle("اعتبارسنجی کد دعوت", "کد را از کنترل‌کننده دریافت کنید")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     OutlinedTextField(
                                         value = code, onValueChange = { code = it.uppercase().filter { c -> c.isLetterOrDigit() }.take(12); message = "" },
@@ -246,9 +250,9 @@ class MainActivity : ComponentActivity() {
 
                         if (consent) {
                             SectionTitle("وضعیت رضایت", "قابل مشاهده و قابل لغو")
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Mint)) {
+                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF174E4A)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x6675E0C2)), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("رضایت ثبت شده است", fontWeight = FontWeight.Bold, color = Color(0xFF17664F))
+                                    Text("رضایت ثبت شده است", fontWeight = FontWeight.Bold, color = Color(0xFF9BF0D7))
                                     Text("دستگاه: $companion", color = Ink)
                                     Text("این ثبت، محلی است و به معنی اتصال شبکه‌ای نیست.", color = Muted, style = MaterialTheme.typography.bodySmall)
                                     OutlinedButton(onClick = {
@@ -262,7 +266,7 @@ class MainActivity : ComponentActivity() {
                     }
                     "events" -> {
                         SectionTitle("گزارش رویدادها", "آخرین ۳۰ رویداد محلی")
-                        Card(shape = RoundedCornerShape(20.dp)) {
+                        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 if (events.isEmpty()) Text("هنوز رویدادی ثبت نشده است.", color = Muted)
                                 events.forEach { event ->
@@ -290,6 +294,28 @@ class MainActivity : ComponentActivity() {
                     color = Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center
                 )
             }
+            }
+        }
+
+        if (showRolePicker) {
+            Dialog(onDismissRequest = { if (role.isNotBlank()) showRolePicker = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 22.dp).clip(RoundedCornerShape(30.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xF21D3557), Color(0xF2142038))))
+                        .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(30.dp)).padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("به VLink خوش آمدید", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                    Text("نقش این دستگاه را انتخاب کنید تا محیط متناسب با آن نمایش داده شود.", color = Color(0xFFD0DDF0), style = MaterialTheme.typography.bodyMedium)
+                    RoleGlassCard("مستر", "مدیریت دعوت‌ها و دستگاه‌های همراه", "✦", Color(0xFF75E0C2)) {
+                        role = "controller"; store.put("role", role); log("ROLE", "نقش مستر انتخاب شد"); showRolePicker = false
+                    }
+                    RoleGlassCard("اسلیو", "پیوستن با رضایت صاحب دستگاه و کنترل شفاف", "◇", Color(0xFF8DB7FF)) {
+                        role = "companion"; store.put("role", role); log("ROLE", "نقش اسلیو انتخاب شد"); showRolePicker = false
+                    }
+                    if (role.isNotBlank()) TextButton(onClick = { showRolePicker = false }, modifier = Modifier.align(Alignment.End)) { Text("انصراف", color = Color.White) }
+                }
+            }
         }
 
         if (showConsent) {
@@ -314,16 +340,44 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    private fun GlassPanel(content: @Composable ColumnScope.() -> Unit) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF))))
+            .border(1.dp, GlassLine, RoundedCornerShape(24.dp)), content = content)
+    }
+
+    @Composable
+    private fun RoleGlassCard(title: String, subtitle: String, symbol: String, accent: Color, onClick: () -> Unit) {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0x24FFFFFF))
+            .border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(22.dp)).clickable(onClick = onClick).padding(17.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Text(symbol, color = accent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = Color(0xFFD0DDF0), style = MaterialTheme.typography.bodySmall)
+            }
+            Text("‹", color = accent, style = MaterialTheme.typography.headlineMedium)
+        }
+    }
+
+    @Composable
     private fun SectionTitle(title: String, subtitle: String) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Ink)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.width(4.dp).height(30.dp).clip(CircleShape).background(Brand))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9C9E0))
+                }
+            }
         }
     }
 
     @Composable
     private fun InfoCard(title: String, body: String) {
-        Card(shape = RoundedCornerShape(20.dp)) {
+        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(title, fontWeight = FontWeight.Bold, color = Ink)
                 Text(body, color = Muted, style = MaterialTheme.typography.bodyMedium)
@@ -333,13 +387,13 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun StatusPill(text: String, color: Color) {
-        Text(text, Modifier.clip(CircleShape).background(color).padding(horizontal = 11.dp, vertical = 7.dp),
-            color = Ink, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Text(text, Modifier.clip(CircleShape).background(color).padding(horizontal = 12.dp, vertical = 7.dp),
+            color = Color(0xFFEAF3FF), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 
     @Composable
     private fun MetricChip(value: String, label: String) {
-        Column(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF2A3A53)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Column(Modifier.clip(RoundedCornerShape(13.dp)).background(Color(0xFF203954)).padding(horizontal = 13.dp, vertical = 9.dp)) {
             Text(value, color = Color.White, fontWeight = FontWeight.Bold)
             Text(label, color = Color(0xFFD8E2F0), style = MaterialTheme.typography.labelSmall)
         }
@@ -347,14 +401,14 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun PageChip(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-        if (selected) Button(onClick = onClick, modifier = modifier, contentPadding = PaddingValues(vertical = 10.dp)) { Text(text) }
-        else OutlinedButton(onClick = onClick, modifier = modifier, contentPadding = PaddingValues(vertical = 10.dp)) { Text(text) }
+        if (selected) Button(onClick = onClick, modifier = modifier.height(46.dp), shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(vertical = 9.dp)) { Text(text, fontWeight = FontWeight.SemiBold) }
+        else OutlinedButton(onClick = onClick, modifier = modifier.height(46.dp), shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(vertical = 9.dp)) { Text(text) }
     }
 
     @Composable
     private fun RoleButton(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-        if (selected) Button(onClick = onClick, modifier = modifier) { Text(text) }
-        else OutlinedButton(onClick = onClick, modifier = modifier) { Text(text) }
+        if (selected) Button(onClick = onClick, modifier = modifier.height(48.dp), shape = RoundedCornerShape(14.dp)) { Text(text, fontWeight = FontWeight.SemiBold) }
+        else OutlinedButton(onClick = onClick, modifier = modifier.height(48.dp), shape = RoundedCornerShape(14.dp)) { Text(text) }
     }
 
     private fun time(millis: Long): String =
