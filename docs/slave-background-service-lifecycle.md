@@ -94,3 +94,16 @@ The current implementation is Activity-owned: `DirectConnectionCard` constructs 
 - Unit tests cover trust persistence, allowlist enforcement, default-disabled state, replay protection, service lifecycle transitions, and stop/revoke behavior.
 - Instrumented tests and two-device tests verify background survival under supported Android conditions.
 - Sensitive camera/microphone/location/screen-capture behavior is not considered complete without a separate, transparent, OS-compliant design and validation.
+
+## Explicitly excluded dormant placeholder
+
+The product inventory may retain a non-operational placeholder named `covert_surveillance` solely to make the boundary explicit in planning and policy tests. It is not a capability implementation:
+
+- `enabledByDefault = false`
+- `executable = false`
+- `remoteActivationAllowed = false`
+- no camera, microphone, location, screen, message, file, or input access
+- no background collection, hidden capture, persistence, or command handler
+- any future legitimate device-management feature must be separately specified as transparent, owner-authorized, permission-scoped, auditable, and revocable
+
+This placeholder must never be wired to a transport command or capability dispatcher. It cannot be activated by a Master, configuration flag, or remote update.
