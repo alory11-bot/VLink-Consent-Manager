@@ -6,7 +6,7 @@ VLink is a consent-first Android application foundation for transparently pairin
 
 - Kotlin + Jetpack Compose Android application (min SDK 26, target SDK 35, JDK 17).
 - Persian RTL interface and explicit role selection.
-- Cryptographically random, 8-character local invitation code with a five-minute validation window.
+- Cryptographically random, 8-character local invitation code with a five-minute validation window.\n- A separate 256-bit, five-minute QR invitation envelope with strict parsing, expiry validation, and constant-time secret comparison; covered by JVM unit tests.
 - Explicit local consent confirmation and a visible revoke action.
 - Encrypted local preference values using AES-GCM with an Android Keystore-protected key.
 - Encrypted local audit history, capped at the latest 30 events.
@@ -14,7 +14,7 @@ VLink is a consent-first Android application foundation for transparently pairin
 
 ## Important implementation boundary
 
-This milestone is a **local UI and security-foundation prototype**, not a working cross-device product. The invitation code is generated and validated against local storage on the same installation; it is not transmitted to another device. There is no network pairing, QR exchange, relay, remote control, or background data collection yet.
+This milestone is a **local UI and security-foundation prototype**, not a working cross-device product. The current UI still generates and validates its legacy invitation code against local storage on the same installation. The new QR envelope is a tested protocol primitive only: the app does not yet render or scan QR codes, transmit invitations, authenticate a remote peer, establish TLS, prevent server-side replay, or create a cross-device session. There is no relay, remote control, or background data collection.
 
 The app intentionally excludes covert monitoring, keylogging, notification/SMS/call-log harvesting, hidden camera or microphone capture, stealth location tracking, remote wipe, and arbitrary remote command execution.
 
