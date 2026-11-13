@@ -334,7 +334,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
         fun start(master: Boolean) {
             val url = endpoint.trim()
-            if (!url.startsWith("wss://") && !url.startsWith("ws://")) {
+            if (!url.startsWith("wss://")) {
                 status = "آدرس سرور مذاکره باید با wss:// شروع شود."
                 return
             }
