@@ -254,9 +254,9 @@ class RoleCapabilityActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth()) { Text(if (status == CapabilityStatus.REJECTED) "درخواست مجدد" else "درخواست دسترسی") }
                     onGrant != null && status == CapabilityStatus.REQUESTED -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = onGrant, modifier = Modifier.weight(1f)) { Text("تأیید") }
-                        OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f)) { Text("رد") }
+                        OutlinedButton(onClick = { onReject?.invoke() }, modifier = Modifier.weight(1f)) { Text("رد") }
                     }
-                    onRevoke != null && status == CapabilityStatus.GRANTED -> OutlinedButton(onClick = onRevoke, modifier = Modifier.fillMaxWidth()) { Text("لغو دسترسی") }
+                    onRevoke != null && status == CapabilityStatus.GRANTED -> OutlinedButton(onClick = { onRevoke?.invoke() }, modifier = Modifier.fillMaxWidth()) { Text("لغو دسترسی") }
                 }
             }
         }
