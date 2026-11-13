@@ -1,0 +1,45 @@
+package ai.vlink.net
+
+import android.content.Context
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
+
+object Discovery {
+    private fun nsd(c: Context) = c.getSystemService(NsdManager::class.java)
+
+    fun advertise(ctx: Context, id: String) {
+        val i = NsdServiceInfo().apply {
+            serviceName = "vlink-" + id
+            serviceType = ai.vlink.core.Const.NSD_TYPE
+            port = ai.vlink.core.Const.PORT
+        }
+        nsd(ctx).registerService(i, NsdManager.PROTOCOL_DNS_SD, object : NsdManager.RegistrationListener {
+            override fun onServiceRegistered(s: NsdServiceInfo) {}
+            override fun onRegistrationFailed(s: NsdServiceInfo, e: Int) {}
+            override fun onServiceUnregistered(s: NsdServiceInfo) {}
+            override fun onUnregistrationFailed(s: NsdServiceInfo, e: Int) {}
+        })
+    }
+
+    fun browse(ctx: Context, found: (String) -> Unit) {
+        val m = nsd(ctx)
+        m.discoverServices(ai.vlink.core.Const.NSD_TYPE, NsdManager.PROTOCOL_DNS_SD,
+            object : NsdManager.DiscoveryListener {
+                override fun onStartDiscoveryFailed(t: String, e: Int) {}
+                override fun onStopDiscoveryFailed(t: String, e: Int) {}
+                override fun onDiscoveryStarted(t: String) {}
+                override fun onDiscoveryStopped(t: String) {}
+                override fun onServiceLost(s: NsdServiceInfo) {}
+                override fun onServiceFound(s: NsdServiceInfo) {
+                    runCatching {
+                        m.resolveService(s, object : NsdManager.ResolveListener {
+                            override fun onResolveFailed(x: NsdServiceInfo, e: Int) {}
+                            override fun onServiceResolved(x: NsdServiceInfo) {
+                                x.host?.hostAddress?.let(found)
+                            }
+                        })
+                    }
+                }
+            })
+    }
+}
