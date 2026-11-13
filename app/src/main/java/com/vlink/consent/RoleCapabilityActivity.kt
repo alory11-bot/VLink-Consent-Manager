@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,12 +23,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 
-private val RoleInk = Color(0xFF17243A)
-private val RoleMuted = Color(0xFF66758B)
-private val RoleBlue = Color(0xFF2457A6)
-private val RoleCanvas = Color(0xFFF4F7FB)
-private val RoleGreen = Color(0xFFE6F5EF)
-private val RoleAmber = Color(0xFFFFF3DB)
+private val RoleInk = Color(0xFFF1F6FF)
+private val RoleMuted = Color(0xFFB6C7DF)
+private val RoleBlue = Color(0xFF83B7FF)
+private val RoleCanvas = Color(0xFF091426)
+private val RoleGreen = Color(0xFF174E4A)
+private val RoleAmber = Color(0xFF62491F)
 
 class RoleCapabilityActivity : ComponentActivity() {
     private lateinit var secureStore: SecureStore
@@ -35,9 +37,10 @@ class RoleCapabilityActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         secureStore = SecureStore(this)
         setContent {
-            MaterialTheme(colorScheme = lightColorScheme(
-                primary = RoleBlue, background = RoleCanvas, surface = Color.White,
-                onSurface = RoleInk, secondary = Color(0xFF16866B), outline = Color(0xFFDCE4EF)
+            MaterialTheme(colorScheme = darkColorScheme(
+                primary = RoleBlue, onPrimary = Color(0xFF0B1B31), background = RoleCanvas,
+                surface = Color(0xFF172943), onSurface = RoleInk, secondary = Color(0xFF75E0C2),
+                outline = Color(0xFF526B8C)
             )) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     RoleCapabilityScreen()
@@ -73,17 +76,17 @@ class RoleCapabilityActivity : ComponentActivity() {
 
         Surface(Modifier.fillMaxSize(), color = RoleCanvas) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
+                Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF071120), Color(0xFF102A49), Color(0xFF171F3A)))).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("VLink", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = RoleInk)
+                        Text("VLink", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color.White)
                         Text("مدیریت نقش و دسترسی دستگاه‌ها", color = RoleMuted)
                     }
-                    Surface(color = if (roleName == "MASTER") RoleBlue.copy(alpha = .10f) else RoleGreen,
+                    Surface(color = if (roleName == "MASTER") Color(0xFF244A70) else RoleGreen,
                         shape = RoundedCornerShape(50)) {
-                        Text(if (roleName == "MASTER") "MASTER" else if (roleName == "SLAVE") "SLAVE" else "SETUP",
+                        Text(if (roleName == "MASTER") "مستر" else if (roleName == "SLAVE") "اسلیو" else "راه‌اندازی",
                             Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontWeight = FontWeight.Bold, color = RoleInk)
                     }
                 }
@@ -164,7 +167,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     }
                 }
 
-                HorizontalDivider()
+                HorizontalDivider(color = Color(0x44FFFFFF))
                 Text("گزارش محلی • ${events.size} رویداد اخیر", fontWeight = FontWeight.Bold, color = RoleInk)
                 events.takeLast(6).reversed().forEach {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -214,7 +217,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
     @Composable
     private fun HeaderCard(title: String, body: String) {
-        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = RoleInk)) {
+        Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x55FFFFFF)), modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF28577F), Color(0xFF172E4D), Color(0xFF1B2944))), RoundedCornerShape(26.dp))) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(title, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(body, color = Color(0xFFD8E2F0), style = MaterialTheme.typography.bodyMedium)
@@ -224,7 +227,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
     @Composable
     private fun RoleChoiceCard(title: String, description: String, onClick: () -> Unit) {
-        Card(onClick = onClick, shape = RoundedCornerShape(20.dp)) {
+        Card(onClick = onClick, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF1B304B)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x55FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = RoleInk)
                 Text(description, color = RoleMuted)
@@ -242,7 +245,7 @@ class RoleCapabilityActivity : ComponentActivity() {
         onReject: (() -> Unit)? = null,
         onRevoke: (() -> Unit)? = null
     ) {
-        Card(shape = RoundedCornerShape(18.dp)) {
+        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xCC1A2D47)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -280,7 +283,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
     @Composable
     private fun StatCard(label: String, value: String, modifier: Modifier) {
-        Card(modifier = modifier, shape = RoundedCornerShape(16.dp)) {
+        Card(modifier = modifier, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF203954)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(14.dp)) {
                 Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = RoleBlue)
                 Text(label, color = RoleMuted, style = MaterialTheme.typography.bodySmall)
@@ -318,7 +321,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     runOnUiThread { peers = peers - peerId; status = "ارتباط یک دستگاه قطع شد." }
                 }
                 override fun onBytesReceived(peerId: String, bytes: ByteArray) {
-                    runOnUiThread { status = "داده رمزنگاری‌شده از همتای احرازشده دریافت شد (§{bytes.size} بایت)." }
+                    runOnUiThread { status = "داده رمزنگاری‌شده از همتای احرازشده دریافت شد (${bytes.size} بایت)." }
                 }
                 override fun onFailure(operation: String, detail: String) {
                     runOnUiThread { status = "خطا در §{operation}: §{detail}" }
@@ -345,7 +348,7 @@ class RoleCapabilityActivity : ComponentActivity() {
             }.onFailure { status = "شروع اتصال ناموفق بود: §{it.localizedMessage}" }
         }
 
-        Card(shape = RoundedCornerShape(20.dp)) {
+        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xCC192D47)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("اتصال مستقیم از طریق اینترنت", fontWeight = FontWeight.Bold, color = RoleInk)
                 Text("شناسه پایدار این نصب: §{LocalDeviceIdentityStore(this@RoleCapabilityActivity).getOrCreate().shortId}",
