@@ -101,7 +101,7 @@ function createSignalingServer(options = {}) {
 
       if (!membership) return closePeer(ws, 4003, "join a room first");
       const room = rooms.get(membership.roomId);
-      if (!room || room.expiresAt <= t) return closePeer(ws, 4001, "session expired");
+      if (!room) return closePeer(ws, 4001, "session expired");
       if (!["offer", "answer", "candidate", "bye"].includes(msg.type)) {
         return closePeer(ws, 4002, "unsupported message type");
       }
