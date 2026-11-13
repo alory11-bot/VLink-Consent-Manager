@@ -117,11 +117,11 @@ class RoleCapabilityActivity : ComponentActivity() {
                         Text("درخواست قابلیت", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Capability.entries.forEach { capability ->
                             val status = states[capability] ?: CapabilityStatus.NOT_REQUESTED
-                            CapabilityCard(capability, status) {
+                            CapabilityCard(capability, status, onRequest = {
                                 if (RoleCapabilityPolicy.canRequest(DeviceRole.MASTER, status)) {
                                     update(capability, CapabilityStatus.REQUESTED, "CAPABILITY_REQUESTED")
                                 }
-                            }
+                            })
                         }
                     } else {
                         val pending = states.filterValues { it == CapabilityStatus.REQUESTED }
