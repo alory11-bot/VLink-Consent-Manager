@@ -25,7 +25,7 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         val id: String, val pc: PeerConnection,
         var dc: DataChannel? = null, var localNonce: String? = null,
         var remoteNonce: String? = null, var remoteProof: String? = null,
-        var proofSent: Boolean = false, var authenticated: Boolean = false
+        var proofSent: Boolean = false, var authenticated: Boolean = false, var remoteDescriptionSet: Boolean = false
     )
 
     private val app = context.applicationContext
@@ -96,7 +96,6 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         val peer = Peer(id, pc)
         peers[id] = peer
         if (createChannel) attachChannel(id, pc.createDataChannel("vlink-data", DataChannel.Init()) ?: error("DataChannel creation failed"))
-        queuedIce.remove(id)?.forEach(pc::addIceCandidate)
         return peer
     }
 
@@ -180,6 +179,8 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     private fun acceptOffer(id: String, sdp: String) {
         val p = runCatching { createPeer(id, false) }.getOrElse { listener.onFailure("peer", it.message ?: "peer creation failed"); return }
         p.pc.setRemoteDescription(observer({
+            p.remoteDescriptionSet = true
+            flushIce(id)
             p.pc.createAnswer(observer({ answer ->
                 p.pc.setLocalDescription(observer({
                     signaling?.sendSignal("answer", id, JSONObject().put("sdp", answer.description))
@@ -189,14 +190,21 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     }
 
     private fun acceptAnswer(id: String, sdp: String) {
-        peers[id]?.pc?.setRemoteDescription(observer({}, { failPeer(id, it) }), SessionDescription(SessionDescription.Type.ANSWER, sdp))
+        val p = peers[id] ?: return
+        p.pc.setRemoteDescription(observer({ p.remoteDescriptionSet = true; flushIce(id) }, { failPeer(id, it) }), SessionDescription(SessionDescription.Type.ANSWER, sdp))
     }
 
     private fun receiveCandidate(id: String, payload: JSONObject) {
         val mid = payload.optString("sdpMid").takeIf { it.isNotBlank() } ?: return
         val c = IceCandidate(mid, payload.optInt("sdpMLineIndex"), payload.optString("sdp"))
         val p = peers[id]
-        if (p == null) queuedIce.getOrPut(id) { mutableListOf() }.add(c) else p.pc.addIceCandidate(c)
+        if (p == null || !p.remoteDescriptionSet) queuedIce.getOrPut(id) { mutableListOf() }.add(c) else p.pc.addIceCandidate(c)
+    }
+
+    private fun flushIce(id: String) {
+        val p = peers[id] ?: return
+        if (!p.remoteDescriptionSet) return
+        queuedIce.remove(id)?.forEach(p.pc::addIceCandidate)
     }
 
     private fun observer(created: (SessionDescription) -> Unit, failed: (String) -> Unit) = object : SdpObserver {
