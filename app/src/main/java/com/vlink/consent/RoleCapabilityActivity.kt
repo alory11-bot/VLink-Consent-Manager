@@ -356,6 +356,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     add(Manifest.permission.BLUETOOTH_ADVERTISE)
                     add(Manifest.permission.BLUETOOTH_CONNECT)
                     add(Manifest.permission.BLUETOOTH_SCAN)
+                    if (Build.VERSION.SDK_INT <= 32) add(Manifest.permission.ACCESS_FINE_LOCATION)
                 } else if (Build.VERSION.SDK_INT >= 29) {
                     add(Manifest.permission.ACCESS_FINE_LOCATION)
                 } else {
@@ -418,7 +419,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                         Text(if (role == DeviceRole.MASTER) "آماده‌سازی مستر برای اتصال" else "جست‌وجوی مسترهای نزدیک")
                     }
                 }
-                Text("بدون سرور و بدون رله؛ اتصال فقط با پشتیبانی رادیویی، مجوزهای لازم و حضور دستگاه‌ها در محدوده ارتباط برقرار می‌شود.",
+                Text("بدون سرور و بدون رله؛ Wi-Fi و Bluetooth باید روشن باشند. اتصال فقط در محدوده رادیویی و با مجوزهای لازم برقرار می‌شود.",
                     color = RoleMuted, style = MaterialTheme.typography.labelSmall)
             }
         }
