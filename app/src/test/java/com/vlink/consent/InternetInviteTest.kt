@@ -12,6 +12,8 @@ class InternetInviteTest {
         assertNotNull(parsed)
         assertEquals(invite.room, parsed!!.room)
         assertEquals(invite.token, parsed.token)
+        assertEquals(43, invite.signalingCredential.length)
+        assertNotEquals(invite.token, invite.signalingCredential)
         assertFalse(invite.isValidAt(now + 300_000L))
     }
 
