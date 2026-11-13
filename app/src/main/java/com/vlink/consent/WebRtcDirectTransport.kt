@@ -5,11 +5,8 @@ import android.util.Base64
 import org.json.JSONObject
 import org.webrtc.*
 import java.nio.ByteBuffer
-import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 /** WebRTC direct data transport. Signaling is restricted to SDP/ICE metadata. */
 class WebRtcDirectTransport(context: Context, private val listener: Listener) {
@@ -141,11 +138,12 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         val remote = requireNotNull(p.remoteNonce)
         val masterNonce = if (master) local else remote
         val slaveNonce = if (master) remote else local
-        val text = "VLINK-WEBRTC-V1|" + requireNotNull(invite).room + "|" + masterNonce + "|" + slaveNonce
-        val key = Base64.decode(requireNotNull(invite).token, Base64.URL_SAFE or Base64.NO_WRAP)
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(key, "HmacSHA256"))
-        return Base64.encodeToString(mac.doFinal(text.toByteArray()), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        return PeerInviteAuthenticator.createProof(
+            requireNotNull(invite).token,
+            requireNotNull(invite).room,
+            masterNonce,
+            slaveNonce
+        )
     }
 
     private fun sendProof(p: Peer) {
