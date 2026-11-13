@@ -168,7 +168,7 @@ class MainActivity : ComponentActivity() {
 
                         if (role == "controller") {
                             SectionTitle("دعوت‌نامه یک‌بارمصرف", "کد محلی با اعتبار پنج دقیقه‌ای")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text("برای شروع فرایند آزمایشی، یک کد دعوت تولید کنید.", color = Muted)
                                     if (invite.isNotBlank()) {
@@ -204,7 +204,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             SectionTitle("ثبت رضایت", "ثبت نام دستگاه و تأیید صریح")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     OutlinedTextField(
                                         value = label, onValueChange = { label = it },
@@ -220,7 +220,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } else if (role == "companion") {
                             SectionTitle("اعتبارسنجی کد دعوت", "کد را از کنترل‌کننده دریافت کنید")
-                            Card(shape = RoundedCornerShape(20.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     OutlinedTextField(
                                         value = code, onValueChange = { code = it.uppercase().filter { c -> c.isLetterOrDigit() }.take(12); message = "" },
@@ -265,7 +265,7 @@ class MainActivity : ComponentActivity() {
                     }
                     "events" -> {
                         SectionTitle("گزارش رویدادها", "آخرین ۳۰ رویداد محلی")
-                        Card(shape = RoundedCornerShape(20.dp)) {
+                        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 if (events.isEmpty()) Text("هنوز رویدادی ثبت نشده است.", color = Muted)
                                 events.forEach { event ->
@@ -331,7 +331,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun InfoCard(title: String, body: String) {
-        Card(shape = RoundedCornerShape(20.dp)) {
+        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(title, fontWeight = FontWeight.Bold, color = Ink)
                 Text(body, color = Muted, style = MaterialTheme.typography.bodyMedium)
