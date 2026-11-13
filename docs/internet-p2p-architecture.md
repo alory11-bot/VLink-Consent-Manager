@@ -21,7 +21,7 @@ VLink connects devices over the public Internet. Bluetooth and nearby-device dis
 - [ ] Public WSS endpoint deployment and TLS verification.
 - [ ] Two physical Android devices on separate Internet connections.
 - [ ] Symmetric NAT / carrier-grade NAT testing.
-- [ ] End-to-end capability request protocol over authenticated DataChannel.
+- [x] Versioned capability request/decision/revoke envelope with session, peer identity, role, timestamp, and revision validation.\n- [x] Transport send/receive hooks restricted to authenticated WebRTC DataChannels.\n- [x] Duplicate/stale revision suppression per peer and request ID.\n- [ ] Connect protocol events to per-peer consent UI/state persistence and end-to-end device tests.
 - [ ] Trusted-peer key lifecycle, revocation, and reconnect policy.
 - [ ] Optional TURN fallback after direct P2P has been measured.
 
@@ -47,7 +47,7 @@ The service is not a TURN relay. It does not receive DataChannel application pay
 - The server sees only a one-way credential, not the original secret.
 - WebRTC DTLS protects the DataChannel; the HMAC exchange binds the session to the shared invite secret.
 - A successful transport handshake does not grant camera, microphone, location, notifications, or file access.
-- Capability consent remains a separate gate and must be implemented over the authenticated DataChannel.
+- A versioned capability-control envelope is carried only after the authenticated DataChannel handshake. The UI/state reducer must still apply owner-only decisions and persist them per peer.\n- Capability consent remains a separate gate; transport authentication alone never grants a capability.
 - Do not log invite strings, room credentials, SDP, ICE candidates, or application payloads.
 - Production must use WSS. Cleartext WebSocket is blocked by the Android manifest.
 
