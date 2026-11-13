@@ -19,3 +19,13 @@ Nearby Connections requires Bluetooth and nearby-device/Wi-Fi permissions that v
 3. Require local Slave approval for each capability scope; camera/microphone/location remain runtime and foreground-visible.
 4. Add message envelope versioning, replay protection, request IDs, expiry, and strict payload limits.
 5. Add lifecycle handling, reconnect policy, rate limits, and multi-device authorization tests.
+
+## Manual two-device smoke test
+1. Install the same VLink build on both Android devices; Google Play services must be available.
+2. Keep both devices nearby, with Bluetooth and Wi-Fi enabled. Keep VLink open in the foreground.
+3. Select Master on one phone and Slave on the other.
+4. On Master, choose one-to-one or one-to-many and start advertising. On Slave, start discovery.
+5. When the connection prompt appears on both phones, compare the displayed authentication digits out-of-band and approve only if they match.
+6. Confirm that each side displays the connected peer. Stop the session from the UI to disconnect.
+
+This transport is for nearby radio-range devices (actual range depends on hardware and environment). It is not a global-Internet P2P tunnel: it does not connect distant devices across unrelated networks. Closing the activity stops discovery/advertising in this preview. Reconnection without re-verification and persistent trusted-peer identities are not implemented yet.
