@@ -16,22 +16,26 @@ class PairingInviteTest {
         val invite = PairingInvite.create(2_000_000L)
         val parsed = PairingInvite.parseQrUri(invite.toQrUri())
         assertNotNull(parsed)
-        assertEquals(invite.sessionId, parsed!!.sessionId)
-        assertEquals(invite.issuedAtMillis, parsed.issuedAtMillis)
-        assertEquals(invite.expiresAtMillis, parsed.expiresAtMillis)
-        assertTrue(parsed.matches(invite.secret))
+        assertEquals(invite.toQrUri(), parsed!!.toQrUri())
+        assertTrue(parsed.isValidAt(2_000_001L))
     }
 
-    @Test fun rejectsTamperedMalformedAndWrongSchemePayloads() {
+    @Test fun rejectsTamperedMalformedDuplicateAndWrongSchemePayloads() {
         val invite = PairingInvite.create(3_000_000L)
         assertNull(PairingInvite.parseQrUri(invite.toQrUri().replace("vlink://", "http://")))
         assertNull(PairingInvite.parseQrUri(invite.toQrUri().replace("v=1", "v=2")))
+        assertNull(PairingInvite.parseQrUri(invite.toQrUri() + "&v=1"))
         assertNull(PairingInvite.parseQrUri("vlink://pair?v=1&sid=x&secret=abc&iat=1&exp=2"))
     }
 
     @Test fun secretComparisonRejectsDifferentValues() {
         val invite = PairingInvite.create(4_000_000L)
-        assertTrue(invite.matches(invite.secret.copyOf()))
+        assertTrue(invite.matches(ByteArray(32).also { bytes ->
+            val parsed = PairingInvite.parseQrUri(invite.toQrUri())!!
+            val encoded = parsed.toQrUri().substringAfter("secret=").substringBefore("&")
+            val decoded = java.util.Base64.getUrlDecoder().decode(encoded)
+            decoded.copyInto(bytes)
+        }))
         assertFalse(invite.matches(ByteArray(32)))
     }
 }
