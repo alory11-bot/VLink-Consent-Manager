@@ -31,6 +31,9 @@ class PairingInvite(
     fun matches(candidate: ByteArray): Boolean =
         candidate.size == secretBytes.size && MessageDigest.isEqual(secretBytes, candidate)
 
+    fun hasSameSecretAs(other: PairingInvite): Boolean =
+        MessageDigest.isEqual(secretBytes, other.secretBytes)
+
     /** URI suitable for encoding as a QR code. Treat it as a secret. */
     fun toQrUri(): String {
         require(secretBytes.size == SECRET_BYTES)
