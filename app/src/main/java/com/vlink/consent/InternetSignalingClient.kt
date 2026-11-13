@@ -35,10 +35,7 @@ class InternetSignalingClient(
     @Synchronized
     fun connect(endpoint: String, invite: InternetInvite, isMaster: Boolean) {
         check(socket == null) { "Signaling session already started" }
-        require(endpoint.startsWith("wss://") || endpoint.startsWith("ws://")) { "Signaling URL must use ws:// or wss://" }
-        require(endpoint.startsWith("wss://") || endpoint.contains("10.0.2.2") || endpoint.contains("localhost") || endpoint.contains("127.0.0.1")) {
-            "Cleartext WebSocket is allowed only for local development"
-        }
+        require(endpoint.startsWith("wss://")) { "Production signaling must use secure wss://" }
         require(invite.isValidAt(System.currentTimeMillis())) { "Invite expired or invalid" }
         val request = Request.Builder().url(endpoint).build()
         socket = http.newWebSocket(request, object : WebSocketListener() {
