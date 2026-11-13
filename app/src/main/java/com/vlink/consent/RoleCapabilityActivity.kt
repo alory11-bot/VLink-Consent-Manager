@@ -324,7 +324,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     runOnUiThread { status = "داده رمزنگاری‌شده از همتای احرازشده دریافت شد (${bytes.size} بایت)." }
                 }
                 override fun onFailure(operation: String, detail: String) {
-                    runOnUiThread { status = "خطا در §{operation}: §{detail}" }
+                    runOnUiThread { status = "خطا در ${operation}: ${detail}" }
                 }
             })
         }
@@ -345,13 +345,13 @@ class RoleCapabilityActivity : ComponentActivity() {
                 transport.start(url, invite, master)
                 running = true
                 status = if (master) "در حال ساخت اتاق امن اینترنتی..." else "در حال اتصال به اتاق اینترنتی..."
-            }.onFailure { status = "شروع اتصال ناموفق بود: §{it.localizedMessage}" }
+            }.onFailure { status = "شروع اتصال ناموفق بود: ${it.localizedMessage}" }
         }
 
         Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xCC192D47)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("اتصال مستقیم از طریق اینترنت", fontWeight = FontWeight.Bold, color = RoleInk)
-                Text("شناسه پایدار این نصب: §{LocalDeviceIdentityStore(this@RoleCapabilityActivity).getOrCreate().shortId}",
+                Text("شناسه پایدار این نصب: ${LocalDeviceIdentityStore(this@RoleCapabilityActivity).getOrCreate().shortId}",
                     color = RoleMuted, style = MaterialTheme.typography.labelSmall)
                 OutlinedTextField(
                     value = endpoint, onValueChange = { endpoint = it },
@@ -378,7 +378,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     }, modifier = Modifier.fillMaxWidth()) { Text("کپی دعوت‌نامه") }
                 }
                 if (peers.isNotEmpty()) {
-                    Text("همتاهای احرازشده: §{peers.size}", fontWeight = FontWeight.SemiBold, color = RoleInk)
+                    Text("همتاهای احرازشده: ${peers.size}", fontWeight = FontWeight.SemiBold, color = RoleInk)
                     peers.forEach { peer ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(peer.take(8), Modifier.weight(1f), color = RoleMuted)
