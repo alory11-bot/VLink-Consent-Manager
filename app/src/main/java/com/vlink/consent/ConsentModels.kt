@@ -12,4 +12,7 @@ object PairingCode {
     }
     fun isValid(value: String): Boolean =
         value.length in 6..12 && value.all { it in ALPHABET }
+
+    fun isValidForWindow(value: String, issuedAt: Long, now: Long): Boolean =
+        isValid(value) && issuedAt > 0L && now - issuedAt in 0L..300_000L
 }
