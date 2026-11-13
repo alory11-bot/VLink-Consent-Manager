@@ -33,6 +33,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
     private val client: ConnectionsClient = Nearby.getConnectionsClient(context.applicationContext)
     private val connected = linkedSetOf<String>()
     private val pending = linkedSetOf<String>()
+    private val requested = linkedSetOf<String>()
     private var maxPeers = 1
     private val endpointNames = mutableMapOf<String, String>()
     private var localName = "VLink"
@@ -68,6 +69,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
             pending.remove(endpointId)
+            requested.remove(endpointId)
             if (result.status.statusCode == ConnectionsStatusCodes.STATUS_OK) {
                 connected.add(endpointId)
                 listener.onPeerConnected(endpointId, endpointNames[endpointId] ?: endpointId)
@@ -79,6 +81,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
         override fun onDisconnected(endpointId: String) {
             pending.remove(endpointId)
+            requested.remove(endpointId)
             connected.remove(endpointId)
             endpointNames.remove(endpointId)
             listener.onPeerDisconnected(endpointId)
@@ -88,9 +91,13 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
     private val discoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
             listener.onPeerFound(endpointId, info.endpointName)
-            if (localRole == DeviceRole.SLAVE) {
+            if (localRole == DeviceRole.SLAVE && connected.isEmpty() && pending.isEmpty() && requested.isEmpty()) {
+                requested.add(endpointId)
                 client.requestConnection(localName, endpointId, lifecycleCallback)
-                    .addOnFailureListener { listener.onStatus("ارسال درخواست اتصال ناموفق بود: ${it.localizedMessage}") }
+                    .addOnFailureListener {
+                        requested.remove(endpointId)
+                        listener.onStatus("ارسال درخواست اتصال ناموفق بود: ${it.localizedMessage}")
+                    }
             }
         }
         override fun onEndpointLost(endpointId: String) = listener.onPeerLost(endpointId)
@@ -141,6 +148,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
         running = false
         connected.clear()
         pending.clear()
+        requested.clear()
         endpointNames.clear()
         localRole = null
     }
