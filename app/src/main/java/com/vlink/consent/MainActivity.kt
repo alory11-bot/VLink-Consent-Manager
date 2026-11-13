@@ -33,15 +33,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Ink = Color(0xFF18283B)
-private val Muted = Color(0xFF6D7C8F)
+private val Ink = Color(0xFFF2F7FF)
+private val Muted = Color(0xFFB7C8DF)
 private val Brand = Color(0xFF2864D8)
 private val Canvas = Color(0xFF0B1428)
 private val GlassLine = Color(0x35FFFFFF)
-private val Mint = Color(0xFFE8F6F1)
-private val Amber = Color(0xFFFFF4DF)
+private val Mint = Color(0xFF174E4A)
+private val Amber = Color(0xFF62491F)
 private val Navy = Color(0xFF10243A)
-private val Line = Color(0xFFE4EAF1)
+private val Line = Color(0x45FFFFFF)
 
 class MainActivity : ComponentActivity() {
     private lateinit var store: SecureStore
@@ -50,14 +50,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         store = SecureStore(this)
         setContent {
-            val colors = lightColorScheme(
-                primary = Brand,
-                onPrimary = Color.White,
+            val colors = darkColorScheme(
+                primary = Color(0xFF83B7FF),
+                onPrimary = Color(0xFF0B1B31),
                 background = Canvas,
-                surface = Color.White,
-                onSurface = Ink,
-                secondary = Color(0xFF16856D),
-                outline = Line
+                surface = Color(0xFF172943),
+                onSurface = Color(0xFFF2F7FF),
+                secondary = Color(0xFF75E0C2),
+                outline = Color(0xFF526B8C)
             )
             MaterialTheme(colorScheme = colors) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -128,14 +128,18 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Navy),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape = RoundedCornerShape(26.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    modifier = Modifier.fillMaxWidth().background(
+                        Brush.linearGradient(listOf(Color(0xFF27527A), Color(0xFF17324F), Color(0xFF1A2944))),
+                        RoundedCornerShape(26.dp)
+                    ).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(26.dp))
                 ) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("مدیریت ارتباط دستگاه‌ها", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
+                        Text(if (role == "controller") "مرکز کنترل مستر" else if (role == "companion") "پنل همراه اسلیو" else "مدیریت ارتباط دستگاه‌ها", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
                         Text(
-                            "اتصال امن، کنترل شفاف و اختیار همیشگی صاحب دستگاه. وضعیت هر قابلیت باید مستقل و قابل بررسی باشد.",
+                            if (role == "controller") "دعوت و مدیریت دستگاه‌های همراه در یک فضای امن و شفاف." else if (role == "companion") "وضعیت مشارکت و رضایت دستگاه در اختیار صاحب آن باقی می‌ماند." else "اتصال امن، کنترل شفاف و اختیار همیشگی صاحب دستگاه.",
                             color = Color(0xFFD8E2F0), style = MaterialTheme.typography.bodyMedium
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -171,7 +175,7 @@ class MainActivity : ComponentActivity() {
                                     if (invite.isNotBlank()) {
                                         Box(
                                             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                                                .background(if (isInviteValid) Mint else Amber).padding(16.dp),
+                                                .background(if (isInviteValid) Color(0xFF174E4A) else Color(0xFF62491F)).border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(16.dp)).padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -246,9 +250,9 @@ class MainActivity : ComponentActivity() {
 
                         if (consent) {
                             SectionTitle("وضعیت رضایت", "قابل مشاهده و قابل لغو")
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Mint), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBE9DC)), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF174E4A)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x6675E0C2)), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text("رضایت ثبت شده است", fontWeight = FontWeight.Bold, color = Color(0xFF17664F))
+                                    Text("رضایت ثبت شده است", fontWeight = FontWeight.Bold, color = Color(0xFF9BF0D7))
                                     Text("دستگاه: $companion", color = Ink)
                                     Text("این ثبت، محلی است و به معنی اتصال شبکه‌ای نیست.", color = Muted, style = MaterialTheme.typography.bodySmall)
                                     OutlinedButton(onClick = {
@@ -384,7 +388,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun StatusPill(text: String, color: Color) {
         Text(text, Modifier.clip(CircleShape).background(color).padding(horizontal = 12.dp, vertical = 7.dp),
-            color = if (color == Mint) Color(0xFF17664F) else Color(0xFF315B9C), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            color = Color(0xFFEAF3FF), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 
     @Composable
