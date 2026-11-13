@@ -1,0 +1,32 @@
+package ai.vlink.net
+
+import android.util.Base64
+import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
+
+object Crypto {
+    private val rnd = SecureRandom()
+
+    fun newKey() = ByteArray(32).also { rnd.nextBytes(it) }
+
+    fun seal(key: ByteArray, plain: ByteArray): ByteArray {
+        val nonce = ByteArray(12).also { rnd.nextBytes(it) }
+        val c = Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, nonce))
+        return nonce + c.doFinal(plain)
+    }
+
+    fun open(key: ByteArray, blob: ByteArray): ByteArray? {
+        if (blob.size < 13) return null
+        return runCatching {
+            val c = Cipher.getInstance("AES/GCM/NoPadding")
+            c.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, blob.copyOfRange(0, 12)))
+            c.doFinal(blob.copyOfRange(12, blob.size))
+        }.getOrNull()
+    }
+
+    fun b64(b: ByteArray) = Base64.encodeToString(b, Base64.NO_WRAP)
+    fun unb64(s: String) = Base64.decode(s, Base64.NO_WRAP)
+}
