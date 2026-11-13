@@ -156,7 +156,12 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     private fun verifyProof(p: Peer) {
         val received = p.remoteProof ?: return
         if (p.localNonce == null || p.remoteNonce == null) return
-        if (!MessageDigest.isEqual(proof(p).toByteArray(), received.toByteArray())) return failPeer(p.id, "peer authentication failed")
+        val local = requireNotNull(p.localNonce)
+        val remote = requireNotNull(p.remoteNonce)
+        val masterNonce = if (master) local else remote
+        val slaveNonce = if (master) remote else local
+        val currentInvite = requireNotNull(invite)
+        if (!PeerInviteAuthenticator.verify(currentInvite.token, currentInvite.room, masterNonce, slaveNonce, received)) return failPeer(p.id, "peer authentication failed")
         if (!p.authenticated) { p.authenticated = true; listener.onPeerConnected(p.id) }
     }
 
