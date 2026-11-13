@@ -16,6 +16,7 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         fun onPeerConnected(peerId: String)
         fun onPeerDisconnected(peerId: String)
         fun onBytesReceived(peerId: String, bytes: ByteArray)
+        fun onCapabilityMessage(peerId: String, message: CapabilityWireMessage) {}
         fun onFailure(operation: String, detail: String)
     }
 
@@ -23,7 +24,8 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         val id: String, val pc: PeerConnection,
         var dc: DataChannel? = null, var localNonce: String? = null,
         var remoteNonce: String? = null, var remoteDeviceId: String? = null, var remoteProof: String? = null,
-        var proofSent: Boolean = false, var authenticated: Boolean = false, var remoteDescriptionSet: Boolean = false
+        var proofSent: Boolean = false, var authenticated: Boolean = false, var remoteDescriptionSet: Boolean = false,
+        val receivedCapabilityRevisions: MutableMap<String, Long> = mutableMapOf()
     )
 
     private val app = context.applicationContext
@@ -139,6 +141,7 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
                 sendProof(p)
             }
             "proof" -> { p.remoteProof = msg.optString("value"); verifyProof(p) }
+            "capability" -> receiveCapabilityMessage(p, msg)
             else -> if (!p.authenticated) failPeer(p.id, "unexpected control")
         }
     }
@@ -179,9 +182,37 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
         if (!p.authenticated) { p.authenticated = true; listener.onPeerConnected(p.id) }
     }
 
-    private fun control(p: Peer, msg: JSONObject) {
-        val dc = p.dc ?: return
-        if (dc.state() == DataChannel.State.OPEN) dc.send(DataChannel.Buffer(ByteBuffer.wrap(msg.toString().toByteArray()), false))
+    private fun control(p: Peer, msg: JSONObject): Boolean {
+        val dc = p.dc ?: return false
+        if (dc.state() != DataChannel.State.OPEN) return false
+        return dc.send(DataChannel.Buffer(ByteBuffer.wrap(msg.toString().toByteArray()), false))
+    }
+
+    private fun receiveCapabilityMessage(peer: Peer, json: JSONObject) {
+        if (!peer.authenticated) return failPeer(peer.id, "capability message before peer authentication")
+        val message = runCatching { CapabilityWireMessage.fromJson(json) }
+            .getOrElse { return failPeer(peer.id, "malformed capability message") }
+        val expectedRole = if (master) DeviceRole.SLAVE else DeviceRole.MASTER
+        val expectedRoom = invite?.room ?: return failPeer(peer.id, "session unavailable")
+        val invalidReason = message.validate(expectedRoom, peer.remoteDeviceId ?: "", expectedRole)
+        if (invalidReason != null) return failPeer(peer.id, invalidReason)
+        synchronized(peer) {
+            val previous = peer.receivedCapabilityRevisions[message.requestId] ?: 0L
+            if (message.revision <= previous) return
+            peer.receivedCapabilityRevisions[message.requestId] = message.revision
+        }
+        listener.onCapabilityMessage(peer.id, message)
+    }
+
+    /** Sends consent protocol messages only after the invite HMAC handshake succeeds. */
+    fun sendCapabilityMessage(peerId: String, message: CapabilityWireMessage) {
+        val peer = peers[peerId] ?: error("Unknown peer")
+        check(peer.authenticated) { "Peer authentication incomplete" }
+        val currentInvite = requireNotNull(invite) { "No active invite" }
+        val localRole = if (master) DeviceRole.MASTER else DeviceRole.SLAVE
+        val invalidReason = message.validate(currentInvite.room, localDeviceId, localRole)
+        require(invalidReason == null) { invalidReason ?: "Invalid capability message" }
+        check(control(peer, message.toJson())) { "DataChannel unavailable or send failed" }
     }
 
     private fun createOffer(id: String) {
