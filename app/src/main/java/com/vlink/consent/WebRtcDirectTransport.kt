@@ -6,6 +6,7 @@ import org.json.JSONObject
 import org.webrtc.*
 import java.nio.ByteBuffer
 import java.security.SecureRandom
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /** WebRTC direct data transport. Signaling is restricted to SDP/ICE metadata. */
@@ -21,11 +22,12 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     private data class Peer(
         val id: String, val pc: PeerConnection,
         var dc: DataChannel? = null, var localNonce: String? = null,
-        var remoteNonce: String? = null, var remoteProof: String? = null,
+        var remoteNonce: String? = null, var remoteDeviceId: String? = null, var remoteProof: String? = null,
         var proofSent: Boolean = false, var authenticated: Boolean = false, var remoteDescriptionSet: Boolean = false
     )
 
     private val app = context.applicationContext
+    private val localDeviceId = LocalDeviceIdentityStore(app).getOrCreate().id
     private val peers = ConcurrentHashMap<String, Peer>()
     private val queuedIce = ConcurrentHashMap<String, MutableList<IceCandidate>>()
     private var factory: PeerConnectionFactory? = null
@@ -115,7 +117,7 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
     private fun sendHello(p: Peer) {
         if (p.localNonce != null) return
         p.localNonce = Base64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
-        control(p, JSONObject().put("kind", "hello").put("nonce", p.localNonce))
+        control(p, JSONObject().put("kind", "hello").put("nonce", p.localNonce).put("deviceId", localDeviceId))
     }
 
     private fun handleControl(p: Peer, raw: String) {
@@ -125,7 +127,11 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
                 val n = msg.optString("nonce")
                 val decoded = runCatching { Base64.decode(n, Base64.URL_SAFE or Base64.NO_WRAP) }.getOrNull()
                 if (decoded == null || decoded.size != 32) return failPeer(p.id, "invalid nonce")
+                val deviceId = msg.optString("deviceId")
+                val validDeviceId = runCatching { UUID.fromString(deviceId).toString() == deviceId }.getOrDefault(false)
+                if (!validDeviceId) return failPeer(p.id, "invalid device identity")
                 p.remoteNonce = n
+                p.remoteDeviceId = deviceId
                 sendProof(p)
             }
             "proof" -> { p.remoteProof = msg.optString("value"); verifyProof(p) }
@@ -142,7 +148,9 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
             requireNotNull(invite).token,
             requireNotNull(invite).room,
             masterNonce,
-            slaveNonce
+            slaveNonce,
+            if (master) localDeviceId else requireNotNull(p.remoteDeviceId),
+            if (master) requireNotNull(p.remoteDeviceId) else localDeviceId
         )
     }
 
@@ -155,13 +163,15 @@ class WebRtcDirectTransport(context: Context, private val listener: Listener) {
 
     private fun verifyProof(p: Peer) {
         val received = p.remoteProof ?: return
-        if (p.localNonce == null || p.remoteNonce == null) return
+        if (p.localNonce == null || p.remoteNonce == null || p.remoteDeviceId == null) return
         val local = requireNotNull(p.localNonce)
         val remote = requireNotNull(p.remoteNonce)
         val masterNonce = if (master) local else remote
         val slaveNonce = if (master) remote else local
+        val masterDevice = if (master) localDeviceId else requireNotNull(p.remoteDeviceId)
+        val slaveDevice = if (master) requireNotNull(p.remoteDeviceId) else localDeviceId
         val currentInvite = requireNotNull(invite)
-        if (!PeerInviteAuthenticator.verify(currentInvite.token, currentInvite.room, masterNonce, slaveNonce, received)) return failPeer(p.id, "peer authentication failed")
+        if (!PeerInviteAuthenticator.verify(currentInvite.token, currentInvite.room, masterNonce, slaveNonce, masterDevice, slaveDevice, received)) return failPeer(p.id, "peer authentication failed")
         if (!p.authenticated) { p.authenticated = true; listener.onPeerConnected(p.id) }
     }
 
