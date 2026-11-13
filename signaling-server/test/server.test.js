@@ -64,3 +64,33 @@ test("rejects malformed room credentials", async t => {
   ws.send(JSON.stringify({ type: "create", room: "bad", token: "x" }));
   assert.equal(await closed, 4002);
 });
+
+test("invite expiry blocks new joins but does not interrupt an established P2P session", async t => {
+  let clock = 1_800_000_000_000;
+  const app = createSignalingServer({ now: () => clock });
+  const address = await app.listen(0, "127.0.0.1");
+  const url = "ws://127.0.0.1:" + address.port;
+  const secret = token();
+  const room = "EFGH2345";
+  const master = await connect(url);
+  const slave = await connect(url);
+  t.after(async () => { master.close(); slave.close(); await app.close(); });
+
+  const masterJoined = receive(master);
+  master.send(JSON.stringify({ type: "create", room, token: secret }));
+  const mj = await masterJoined;
+  const slaveJoined = receive(slave);
+  slave.send(JSON.stringify({ type: "join", room, token: secret }));
+  const sj = await slaveJoined;
+
+  clock += 6 * 60 * 1000;
+  const forwarded = receive(slave);
+  master.send(JSON.stringify({ type: "offer", to: sj.peerId, payload: { sdp: "renegotiation-after-expiry" } }));
+  assert.equal((await forwarded).payload.sdp, "renegotiation-after-expiry");
+
+  const late = await connect(url);
+  const lateResponse = receive(late);
+  late.send(JSON.stringify({ type: "join", room, token: secret }));
+  assert.equal((await lateResponse).code, "INVALID_OR_EXPIRED_INVITE");
+  late.close();
+});
