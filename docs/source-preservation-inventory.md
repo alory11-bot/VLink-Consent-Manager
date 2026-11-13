@@ -111,3 +111,19 @@ The complete 1,031-line generator text has now also been committed as a non-buil
 The archive is kept as `.txt`, is not included by Gradle, and does not activate or compile its generated behaviors. The Files reader normalized line endings during retrieval; the archive has 1,031 lines and the same readable source content, but is not represented as a byte-for-byte forensic copy. The untouched Library artifact remains the authoritative original.
 
 A separate static review is available at `docs/original-source-security-review.md`, covering protocol, permissions, transport, data storage, remote commands, release readiness and the unimplemented manifest references.
+
+
+## Safe source components restored to original project paths
+
+The following non-surveillance resources have now been restored on this recovery branch:
+
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/res/values/themes.xml`
+- `app/src/main/res/values/colors.xml`
+- `app/src/main/res/drawable/ic_fg.xml`
+- `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+- `app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+- `gradle/wrapper/gradle-wrapper.properties`
+- `app/proguard-rules.pro`
+
+The original `net_sec.xml` path was restored with a **hardened** policy (`cleartextTrafficPermitted=false`), not the original permissive setting. The original permissive source remains visible in the archived generator. No unsafe permissions or services were added to the active manifest. The wrapper JAR is still absent, so the wrapper is not yet independently runnable.
