@@ -1,0 +1,74 @@
+package ai.vlink.data
+
+import android.content.ContentValues
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import org.json.JSONObject
+
+class LocalDb(ctx: Context) : SQLiteOpenHelper(ctx, "vlink.db", null, 1) {
+    override fun onCreate(d: SQLiteDatabase) {
+        d.execSQL("CREATE TABLE devices(id TEXT PRIMARY KEY, name TEXT, model TEXT, sdk INTEGER, online INTEGER DEFAULT 0, lastSeen INTEGER)")
+        d.execSQL("CREATE TABLE events(id INTEGER PRIMARY KEY AUTOINCREMENT, deviceId TEXT, kind TEXT, body TEXT, mediaPath TEXT, created INTEGER, seen INTEGER DEFAULT 0)")
+    }
+
+    override fun onUpgrade(d: SQLiteDatabase, o: Int, n: Int) {}
+
+    fun addDevice(id: String, name: String, model: String, sdk: Int) {
+        val v = ContentValues().apply {
+            put("id", id); put("name", name); put("model", model); put("sdk", sdk)
+            put("lastSeen", System.currentTimeMillis())
+        }
+        writableDatabase.insertWithOnConflict("devices", null, v, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun setOnline(id: String, online: Boolean) {
+        writableDatabase.execSQL("UPDATE devices SET online=?, lastSeen=? WHERE id=?",
+            arrayOf(if (online) 1 else 0, System.currentTimeMillis(), id))
+    }
+
+    fun devices(): List<Array<String>> {
+        val out = mutableListOf<Array<String>>()
+        readableDatabase.rawQuery("SELECT id,name,model,online FROM devices ORDER BY lastSeen DESC", null).use { c ->
+            while (c.moveToNext()) out.add(arrayOf(c.getString(0), c.getString(1) ?: "", c.getString(2) ?: "", c.getString(3)))
+        }
+        return out
+    }
+
+    fun addEvent(deviceId: String, kind: String, body: String, mediaPath: String? = null) {
+        val v = ContentValues().apply {
+            put("deviceId", deviceId); put("kind", kind); put("body", body)
+            put("mediaPath", mediaPath); put("created", System.currentTimeMillis())
+        }
+        writableDatabase.insert("events", null, v)
+    }
+
+    fun events(deviceId: String? = null, limit: Int = 300): List<Array<String?>> {
+        val out = mutableListOf<Array<String?>>()
+        val sql = if (deviceId == null)
+            "SELECT id,deviceId,kind,body,mediaPath,created FROM events ORDER BY id DESC LIMIT $limit"
+        else
+            "SELECT id,deviceId,kind,body,mediaPath,created FROM events WHERE deviceId=? ORDER BY id DESC LIMIT $limit"
+        readableDatabase.rawQuery(sql, deviceId?.let { arrayOf(it) }).use { c ->
+            while (c.moveToNext()) out.add(arrayOf(c.getString(0), c.getString(1), c.getString(2), c.getString(3), c.getString(4), c.getString(5)))
+        }
+        return out
+    }
+
+    fun lastLocations(deviceId: String, limit: Int = 400): List<Pair<Double, Double>> {
+        val out = mutableListOf<Pair<Double, Double>>()
+        readableDatabase.rawQuery(
+            "SELECT body FROM events WHERE deviceId=? AND kind='location' ORDER BY id DESC LIMIT $limit",
+            arrayOf(deviceId)).use { c ->
+            while (c.moveToNext()) runCatching {
+                val j = JSONObject(c.getString(0))
+                out.add(j.getDouble("lat") to j.getDouble("lon"))
+            }
+        }
+        return out
+    }
+
+    fun clear(deviceId: String) {
+        writableDatabase.delete("events", "deviceId=?", arrayOf(deviceId))
+    }
+}
