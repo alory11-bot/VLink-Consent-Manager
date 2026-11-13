@@ -331,7 +331,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     peers = peers.filterNot { it.first == endpointId }
                     status = "ارتباط یک دستگاه قطع شد."
                 }
-                override fun onBytesReceived(endpointId: String, bytes: ByteArray) { status = "داده مستقیم دریافت شد (\${bytes.size} بایت)." }
+                override fun onBytesReceived(endpointId: String, bytes: ByteArray) { status = "داده مستقیم دریافت شد (${bytes.size} بایت)." }
                 override fun onFailure(operation: String, statusCode: Int) {
                     isRunning = false
                     status = "اتصال برقرار نشد ($operation / $statusCode). واسطه‌ای استفاده نمی‌شود."
@@ -342,9 +342,9 @@ class RoleCapabilityActivity : ComponentActivity() {
         val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
             if (result.values.all { it }) {
                 runCatching {
-                    transport.start(role, "VLink-\${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
+                    transport.start(role, "VLink-${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
                     isRunning = true
-                }.onFailure { status = "شروع ارتباط ناموفق بود: \${it.localizedMessage}" }
+                }.onFailure { status = "شروع ارتباط ناموفق بود: ${it.localizedMessage}" }
             } else {
                 status = "مجوزهای لازم برای کشف و اتصال مستقیم داده نشد."
             }
@@ -366,9 +366,9 @@ class RoleCapabilityActivity : ComponentActivity() {
             val missing = required.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
             if (missing.isEmpty()) {
                 runCatching {
-                    transport.start(role, "VLink-\${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
+                    transport.start(role, "VLink-${Build.MODEL}", if (multiPoint) Int.MAX_VALUE else 1)
                     isRunning = true
-                }.onFailure { status = "شروع ارتباط ناموفق بود: \${it.localizedMessage}" }
+                }.onFailure { status = "شروع ارتباط ناموفق بود: ${it.localizedMessage}" }
             } else {
                 permissionLauncher.launch(missing.toTypedArray())
             }
@@ -393,7 +393,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                 }
                 Text(status, color = RoleBlue, style = MaterialTheme.typography.bodySmall)
                 if (peers.isNotEmpty()) {
-                    Text("دستگاه‌های متصل: \${peers.size}", fontWeight = FontWeight.SemiBold, color = RoleInk)
+                    Text("دستگاه‌های متصل: ${peers.size}", fontWeight = FontWeight.SemiBold, color = RoleInk)
                     peers.forEach { (id, name) ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(name, Modifier.weight(1f), color = RoleMuted)
