@@ -10,8 +10,8 @@ android {
         applicationId = "com.vlink.consent"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0-internet-p2p"
+        versionCode = 4
+        versionName = "0.4.0-glass-dashboard"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
