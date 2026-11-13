@@ -1,0 +1,79 @@
+package ai.vlink.net
+
+import android.content.Context
+import fi.iki.elonen.NanoHTTPD
+import org.json.JSONObject
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+
+class MasterServer(
+    private val ctx: Context,
+    private val key: ByteArray,
+    private val sink: EventSink,
+    private val onPair: (String, String, Int) -> Pair<String, String>?
+) : NanoHTTPD(ai.vlink.core.Const.PORT) {
+
+    private val tokens = ConcurrentHashMap<String, String>()
+    private val pending = ConcurrentHashMap<String, LinkedBlockingQueue<String>>()
+
+    fun authorize(token: String, deviceId: String) { tokens[token] = deviceId }
+
+    fun push(deviceId: String, cmd: JSONObject) {
+        pending.getOrPut(deviceId) { LinkedBlockingQueue() }.offer(cmd.toString())
+    }
+
+    private fun read(s: IHTTPSession): ByteArray {
+        val n = s.headers["content-length"]?.toIntOrNull() ?: 0
+        val buf = ByteArray(n)
+        var off = 0
+        while (off < n) {
+            val r = s.inputStream.read(buf, off, n - off)
+            if (r <= 0) break
+            off += r
+        }
+        return buf
+    }
+
+    private fun dev(s: IHTTPSession) = s.headers["x-token"]?.let { tokens[it] }
+
+    override fun serve(s: IHTTPSession): Response = try {
+        when {
+            s.uri == "/pair" && s.method == Method.POST -> {
+                val j = Crypto.open(key, read(s))?.let { JSONObject(String(it)) }
+                val r = j?.let { onPair(it.optString("name"), it.optString("model"), it.optInt("sdk")) }
+                if (r == null) denied() else ok(Crypto.seal(key,
+                    JSONObject().put("deviceId", r.first).put("token", r.second).toString().toByteArray()))
+            }
+            s.uri == "/event" && s.method == Method.POST -> {
+                val d = dev(s) ?: return denied()
+                val plain = Crypto.open(key, read(s)) ?: return denied()
+                sink.ingest(d, plain)
+                ok(ByteArray(0))
+            }
+            s.uri == "/media" && s.method == Method.POST -> {
+                val d = dev(s) ?: return denied()
+                val f = File(ctx.cacheDir, "up_" + System.currentTimeMillis())
+                f.outputStream().use { s.inputStream.copyTo(it) }
+                sink.saveUpload(d, f, s.headers["x-mime"] ?: "application/octet-stream")
+                ok(ByteArray(0))
+            }
+            s.uri == "/cmd" && s.method == Method.GET -> {
+                val d = dev(s) ?: return denied()
+                val wait = s.parameters["wait"]?.firstOrNull()?.toLongOrNull() ?: 25
+                val c = pending.getOrPut(d) { LinkedBlockingQueue() }.poll(wait, TimeUnit.SECONDS)
+                    ?: return newFixedLengthResponse(Response.Status.NO_CONTENT, "text/plain", "")
+                ok(Crypto.seal(key, c.toByteArray()))
+            }
+            else -> newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "no")
+        }
+    } catch (e: Exception) {
+        newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.message)
+    }
+
+    private fun ok(b: ByteArray) =
+        newFixedLengthResponse(Response.Status.OK, "application/octet-stream", b.inputStream(), b.size.toLong())
+
+    private fun denied() = newFixedLengthResponse(Response.Status.UNAUTHORIZED, "text/plain", "auth")
+}
