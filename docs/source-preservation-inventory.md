@@ -99,3 +99,15 @@ These items are preserved in the audit record for completeness. This repository 
 ## Audit conclusion
 
 The earlier simplified app was not a faithful continuation of the supplied VLink source. The 31 generated paths and the additional manifest-only component references are now explicitly enumerated. **No claim of full source restoration is made.** The original Library artifact remains the authoritative untouched source reference.
+
+
+## Original source archive (updated 2026-11-13)
+
+The complete 1,031-line generator text has now also been committed as a non-build-input text archive at:
+
+- `docs/archive/Pasted-text-10.original-source.txt`
+- [Open archived original source](https://github.com/alory11-bot/VLink-Consent-Manager/blob/recovery/preserve-original-source/docs/archive/Pasted-text-10.original-source.txt)
+
+The archive is kept as `.txt`, is not included by Gradle, and does not activate or compile its generated behaviors. The Files reader normalized line endings during retrieval; the archive has 1,031 lines and the same readable source content, but is not represented as a byte-for-byte forensic copy. The untouched Library artifact remains the authoritative original.
+
+A separate static review is available at `docs/original-source-security-review.md`, covering protocol, permissions, transport, data storage, remote commands, release readiness and the unimplemented manifest references.
