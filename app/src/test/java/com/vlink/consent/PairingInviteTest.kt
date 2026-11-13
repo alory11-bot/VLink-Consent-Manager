@@ -6,7 +6,7 @@ import org.junit.Test
 class PairingInviteTest {
     @Test fun createsHighEntropyShortLivedInvite() {
         val invite = PairingInvite.create(1_000_000L)
-        assertEquals(64, invite.toQrUri().substringAfter("secret=").substringBefore("&").length)
+        assertEquals(43, invite.toQrUri().substringAfter("secret=").substringBefore("&").length)
         assertTrue(invite.isValidAt(1_000_000L))
         assertTrue(invite.isValidAt(1_299_999L))
         assertFalse(invite.isValidAt(1_300_000L))
