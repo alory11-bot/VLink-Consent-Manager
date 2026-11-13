@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
                                 val issued = store.get("invite") ?: ""
                                 val issuedAt = store.get("invite_at")?.toLongOrNull() ?: 0L
                                 val valid = PairingCode.isValid(code.trim()) && code.trim() == issued &&
-                                    System.currentTimeMillis() - issuedAt in 0..300_000
+                                    System.currentTimeMillis() - issuedAt in 0L..300_000L
                                 message = if (valid) {
                                     log("CODE_VALIDATED", "کد دعوت در همین دستگاه اعتبارسنجی شد")
                                     "کد محلی معتبر است؛ انتقال به دستگاه دیگر هنوز پیاده‌سازی نشده است."
