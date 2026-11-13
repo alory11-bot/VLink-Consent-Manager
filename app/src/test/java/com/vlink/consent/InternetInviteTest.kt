@@ -14,6 +14,7 @@ class InternetInviteTest {
         assertEquals(invite.token, parsed.token)
         assertEquals(43, invite.signalingCredential.length)
         assertNotEquals(invite.token, invite.signalingCredential)
+        assertFalse(invite.toString().contains(invite.token))
         assertFalse(invite.isValidAt(now + 300_000L))
     }
 
