@@ -1,6 +1,7 @@
 package com.vlink.consent
 
 import java.net.URI
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 
@@ -17,6 +18,13 @@ data class InternetInvite(
             issuedAtMillis > 0L &&
             expiresAtMillis - issuedAtMillis == LIFETIME_MS &&
             nowMillis >= issuedAtMillis && nowMillis < expiresAtMillis
+
+    /** Server sees only this one-way credential, never the secret used for peer HMAC. */
+    val signalingCredential: String
+        get() {
+            val secret = Base64.getUrlDecoder().decode(token)
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256").digest(secret))
+        }
 
     fun toShareText(): String =
         "vlink://internet?room=$room&token=$token&iat=$issuedAtMillis&exp=$expiresAtMillis"
