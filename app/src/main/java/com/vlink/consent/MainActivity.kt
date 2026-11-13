@@ -28,12 +28,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Ink = Color(0xFF17243A)
-private val Muted = Color(0xFF66758B)
-private val Brand = Color(0xFF2457A6)
-private val Canvas = Color(0xFFF4F7FB)
-private val Mint = Color(0xFFE6F5EF)
-private val Amber = Color(0xFFFFF3DB)
+private val Ink = Color(0xFF18283B)
+private val Muted = Color(0xFF6D7C8F)
+private val Brand = Color(0xFF2864D8)
+private val Canvas = Color(0xFFF3F6FA)
+private val Mint = Color(0xFFE8F6F1)
+private val Amber = Color(0xFFFFF4DF)
+private val Navy = Color(0xFF10243A)
+private val Line = Color(0xFFE4EAF1)
 
 class MainActivity : ComponentActivity() {
     private lateinit var store: SecureStore
@@ -48,8 +50,8 @@ class MainActivity : ComponentActivity() {
                 background = Canvas,
                 surface = Color.White,
                 onSurface = Ink,
-                secondary = Color(0xFF16866B),
-                outline = Color(0xFFDCE4EF)
+                secondary = Color(0xFF16856D),
+                outline = Line
             )
             MaterialTheme(colorScheme = colors) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -102,34 +104,35 @@ class MainActivity : ComponentActivity() {
 
         Surface(Modifier.fillMaxSize(), color = Canvas) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(
-                        Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(Brand),
+                        Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(Navy),
                         contentAlignment = Alignment.Center
                     ) { Text("V", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium) }
                     Column(Modifier.weight(1f)) {
-                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Ink)
-                        Text("مدیریت اتصال با رضایت شفاف", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Navy)
+                        Text("DEVICE TRUST & CONTROL  •  مدیریت امن دستگاه", style = MaterialTheme.typography.labelSmall, color = Muted)
                     }
                     StatusPill(if (consent) "رضایت فعال" else "بدون اتصال", if (consent) Mint else Amber)
                 }
 
                 Card(
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Ink)
+                    colors = CardDefaults.cardColors(containerColor = Navy),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("حریم خصوصی، تحت کنترل شماست", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                        Text("مدیریت ارتباط دستگاه‌ها", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
                         Text(
-                            "دعوت‌نامه محلی بسازید، رضایت را آگاهانه ثبت کنید و هر زمان خواستید آن را لغو کنید.",
+                            "اتصال امن، کنترل شفاف و اختیار همیشگی صاحب دستگاه. وضعیت هر قابلیت باید مستقل و قابل بررسی باشد.",
                             color = Color(0xFFD8E2F0), style = MaterialTheme.typography.bodyMedium
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MetricChip("۳۰", "رویداد قابل نگهداری")
-                            MetricChip("۵ دقیقه", "اعتبار کد دعوت")
+                            MetricChip("۳۰", "رویداد اخیر")
+                            MetricChip("۵ دقیقه", "اعتبار دعوت")
                         }
                     }
                 }
@@ -143,7 +146,7 @@ class MainActivity : ComponentActivity() {
                 when (selectedPage) {
                     "home" -> {
                         SectionTitle("نقش دستگاه", "نقش این گوشی را برای گردش کار محلی انتخاب کنید")
-                        Card(shape = RoundedCornerShape(20.dp)) {
+                        Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     RoleButton("کنترل‌کننده", role == "controller", Modifier.weight(1f)) {
@@ -246,7 +249,7 @@ class MainActivity : ComponentActivity() {
 
                         if (consent) {
                             SectionTitle("وضعیت رضایت", "قابل مشاهده و قابل لغو")
-                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Mint)) {
+                            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Mint), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBE9DC)), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text("رضایت ثبت شده است", fontWeight = FontWeight.Bold, color = Color(0xFF17664F))
                                     Text("دستگاه: $companion", color = Ink)
@@ -316,8 +319,13 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun SectionTitle(title: String, subtitle: String) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Ink)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Box(Modifier.width(4.dp).height(30.dp).clip(CircleShape).background(Brand))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Navy)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+            }
         }
     }
 
@@ -333,13 +341,13 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun StatusPill(text: String, color: Color) {
-        Text(text, Modifier.clip(CircleShape).background(color).padding(horizontal = 11.dp, vertical = 7.dp),
-            color = Ink, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Text(text, Modifier.clip(CircleShape).background(color).padding(horizontal = 12.dp, vertical = 7.dp),
+            color = if (color == Mint) Color(0xFF17664F) else Color(0xFF315B9C), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 
     @Composable
     private fun MetricChip(value: String, label: String) {
-        Column(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF2A3A53)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Column(Modifier.clip(RoundedCornerShape(13.dp)).background(Color(0xFF203954)).padding(horizontal = 13.dp, vertical = 9.dp)) {
             Text(value, color = Color.White, fontWeight = FontWeight.Bold)
             Text(label, color = Color(0xFFD8E2F0), style = MaterialTheme.typography.labelSmall)
         }
@@ -347,14 +355,14 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun PageChip(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-        if (selected) Button(onClick = onClick, modifier = modifier, contentPadding = PaddingValues(vertical = 10.dp)) { Text(text) }
-        else OutlinedButton(onClick = onClick, modifier = modifier, contentPadding = PaddingValues(vertical = 10.dp)) { Text(text) }
+        if (selected) Button(onClick = onClick, modifier = modifier.height(46.dp), shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(vertical = 9.dp)) { Text(text, fontWeight = FontWeight.SemiBold) }
+        else OutlinedButton(onClick = onClick, modifier = modifier.height(46.dp), shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(vertical = 9.dp)) { Text(text) }
     }
 
     @Composable
     private fun RoleButton(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-        if (selected) Button(onClick = onClick, modifier = modifier) { Text(text) }
-        else OutlinedButton(onClick = onClick, modifier = modifier) { Text(text) }
+        if (selected) Button(onClick = onClick, modifier = modifier.height(48.dp), shape = RoundedCornerShape(14.dp)) { Text(text, fontWeight = FontWeight.SemiBold) }
+        else OutlinedButton(onClick = onClick, modifier = modifier.height(48.dp), shape = RoundedCornerShape(14.dp)) { Text(text) }
     }
 
     private fun time(millis: Long): String =
