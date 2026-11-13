@@ -4,12 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +36,8 @@ import java.util.Locale
 private val Ink = Color(0xFF18283B)
 private val Muted = Color(0xFF6D7C8F)
 private val Brand = Color(0xFF2864D8)
-private val Canvas = Color(0xFFF3F6FA)
+private val Canvas = Color(0xFF0B1428)
+private val GlassLine = Color(0x35FFFFFF)
 private val Mint = Color(0xFFE8F6F1)
 private val Amber = Color(0xFFFFF4DF)
 private val Navy = Color(0xFF10243A)
@@ -44,7 +50,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         store = SecureStore(this)
         setContent {
-            val colors = lightColorScheme(
+            val colors = darkColorScheme(
                 primary = Brand,
                 onPrimary = Color.White,
                 background = Canvas,
@@ -89,6 +95,7 @@ class MainActivity : ComponentActivity() {
         var consent by remember { mutableStateOf(store.get("consent") == "yes") }
         var events by remember { mutableStateOf(readEvents()) }
         var showConsent by remember { mutableStateOf(false) }
+        var showRolePicker by remember { mutableStateOf(role.isBlank()) }
         var label by remember { mutableStateOf("") }
         var message by remember { mutableStateOf("") }
         var selectedPage by remember { mutableStateOf("home") }
@@ -103,18 +110,19 @@ class MainActivity : ComponentActivity() {
             PairingCode.isValidForWindow(invite, inviteAt, System.currentTimeMillis())
 
         Surface(Modifier.fillMaxSize(), color = Canvas) {
+            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF0A1428), Color(0xFF142B4B), Color(0xFF17213C))))) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(
-                        Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(Navy),
+                        Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(Brush.linearGradient(listOf(Color(0xFF66DCC6), Color(0xFF538CFF)))),
                         contentAlignment = Alignment.Center
                     ) { Text("V", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium) }
                     Column(Modifier.weight(1f)) {
-                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Navy)
-                        Text("DEVICE TRUST & CONTROL  •  مدیریت امن دستگاه", style = MaterialTheme.typography.labelSmall, color = Muted)
+                        Text("VLink", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        Text("DEVICE TRUST & CONTROL  •  مدیریت امن دستگاه", style = MaterialTheme.typography.labelSmall, color = Color(0xFFB9C9E0))
                     }
                     StatusPill(if (consent) "رضایت فعال" else "بدون اتصال", if (consent) Mint else Amber)
                 }
@@ -293,6 +301,28 @@ class MainActivity : ComponentActivity() {
                     color = Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center
                 )
             }
+            }
+        }
+
+        if (showRolePicker) {
+            Dialog(onDismissRequest = { if (role.isNotBlank()) showRolePicker = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 22.dp).clip(RoundedCornerShape(30.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xF21D3557), Color(0xF2142038))))
+                        .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(30.dp)).padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("به VLink خوش آمدید", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                    Text("نقش این دستگاه را انتخاب کنید تا محیط متناسب با آن نمایش داده شود.", color = Color(0xFFD0DDF0), style = MaterialTheme.typography.bodyMedium)
+                    RoleGlassCard("مستر", "مدیریت دعوت‌ها و دستگاه‌های همراه", "✦", Color(0xFF75E0C2)) {
+                        role = "controller"; store.put("role", role); log("ROLE", "نقش مستر انتخاب شد"); showRolePicker = false
+                    }
+                    RoleGlassCard("اسلیو", "پیوستن با رضایت صاحب دستگاه و کنترل شفاف", "◇", Color(0xFF8DB7FF)) {
+                        role = "companion"; store.put("role", role); log("ROLE", "نقش اسلیو انتخاب شد"); showRolePicker = false
+                    }
+                    if (role.isNotBlank()) TextButton(onClick = { showRolePicker = false }, modifier = Modifier.align(Alignment.End)) { Text("انصراف", color = Color.White) }
+                }
+            }
         }
 
         if (showConsent) {
@@ -313,6 +343,22 @@ class MainActivity : ComponentActivity() {
                 },
                 dismissButton = { TextButton(onClick = { showConsent = false }) { Text("بازگشت") } }
             )
+        }
+    }
+
+    @Composable
+    private fun RoleGlassCard(title: String, subtitle: String, symbol: String, accent: Color, onClick: () -> Unit) {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0x24FFFFFF))
+            .border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(22.dp)).clickable(onClick = onClick).padding(17.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(17.dp)).background(accent.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Text(symbol, color = accent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(subtitle, color = Color(0xFFD0DDF0), style = MaterialTheme.typography.bodySmall)
+            }
+            Text("‹", color = accent, style = MaterialTheme.typography.headlineMedium)
         }
     }
 
