@@ -101,7 +101,10 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
                     }
             }
         }
-        override fun onEndpointLost(endpointId: String) = listener.onPeerLost(endpointId)
+        override fun onEndpointLost(endpointId: String) {
+            requested.remove(endpointId)
+            listener.onPeerLost(endpointId)
+        }
     }
 
     /** Master advertises; Slave discovers. P2P_STAR supports one or many Slaves. */
