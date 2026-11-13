@@ -51,7 +51,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
     @Composable
     private fun RoleCapabilityScreen() {
-        var roleName by remember { mutableStateOf(secureStore.get("vlink_role") ?: "") }
+        var roleName by remember { mutableStateOf((secureStore.get("vlink_role") ?: "").takeIf { it == DeviceRole.MASTER.name || it == DeviceRole.SLAVE.name } ?: "") }
         var states by remember { mutableStateOf(loadStates()) }
         var events by remember { mutableStateOf(loadEvents()) }
         var showRoleReset by remember { mutableStateOf(false) }
@@ -254,7 +254,7 @@ class RoleCapabilityActivity : ComponentActivity() {
                     }
                     StatusTag(status)
                 }
-                if (capability.sensitive) Text("حساس • نیازمند رضایت مستقل", color = Color(0xFF8A5A00), style = MaterialTheme.typography.labelSmall)
+                if (capability.sensitive) Text("حساس • نیازمند رضایت مستقل", color = Color(0xFFFFD08A), style = MaterialTheme.typography.labelSmall)
                 when {
                     onRequest != null -> Button(onClick = onRequest, enabled = status != CapabilityStatus.REQUESTED && status != CapabilityStatus.GRANTED,
                         modifier = Modifier.fillMaxWidth()) { Text(if (status == CapabilityStatus.REJECTED) "درخواست مجدد" else "درخواست دسترسی") }
@@ -293,7 +293,7 @@ class RoleCapabilityActivity : ComponentActivity() {
 
     @Composable
     private fun InfoCard(title: String, body: String) {
-        Card(shape = RoundedCornerShape(18.dp)) {
+        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xCC1A2D47)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF))) {
             Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(title, fontWeight = FontWeight.Bold, color = RoleInk)
                 Text(body, color = RoleMuted, style = MaterialTheme.typography.bodySmall)
