@@ -10,7 +10,7 @@ Original source artifact: Library file `Pasted text(10).txt` (42,433 bytes; 1,03
 
 The original artifact is a PowerShell generator. Its `W '<path>' @'` declarations were enumerated across all 1,031 lines. It declares **31 output files**. Those paths were compared against the recursive Git tree of the backup branch. The source artifact remains in the user's Library; it has not been rewritten.
 
-This document is an inventory, not a claim that the original implementation has been restored. No original implementation file has yet been copied into the application repository.
+This document is an inventory, not a claim that the original implementation has been activated in the application. All 31 generated source bodies have now been preserved as separate, non-build-input text files under `docs/archive/original-generated-source/`; they are not compiled or packaged.
 
 ## File-by-file inventory
 
@@ -92,25 +92,25 @@ These items are preserved in the audit record for completeness. This repository 
 ## Important limitations
 
 1. The original 42,433-byte generator remains available in the user's Library under the identifiers above; this audit does not delete or alter it.
-2. This repository does not yet contain a byte-for-byte source archive. The generator itself can create operational Android components, so it is intentionally not copied into the buildable application tree.
+2. All 31 generated source bodies are now separately archived as `.source.txt` files under `docs/archive/original-generated-source/`. They are intentionally outside the buildable application tree. The original Library file remains the authoritative byte source.
 3. No APK build, runtime test, or CI result is claimed by this inventory commit.
 4. Before any restoration, each source file must be reviewed against the original artifact and classified as safe to preserve, requiring redesign, or not suitable for activation. Any code changes must remain on this recovery branch; do not overwrite `main`.
 
-## Audit conclusion
+## Extracted original source bodies (updated 2026-11-13)\n\nAll 31 generated bodies are now preserved as individual `.source.txt` files beneath `docs/archive/original-generated-source/`, retaining the original relative path in each filename. This is a source-preservation archive, not active application restoration. The files are outside Gradle source sets and are not compiled or packaged.\n\nAuthorship was not identifiable from the source: no author name, email, signature, copyright, or generator attribution exists in the supplied file. The Library upload timestamp is not proof of authorship. See `docs/original-source-provenance.md`.\n\n## Audit conclusion
 
 The earlier simplified app was not a faithful continuation of the supplied VLink source. The 31 generated paths and the additional manifest-only component references are now explicitly enumerated. **No claim of full source restoration is made.** The original Library artifact remains the authoritative untouched source reference.
 
 
 ## Original source archive (updated 2026-11-13)
 
-The complete 1,031-line generator text has now also been committed as a non-build-input text archive at:
+The complete 1,031-line generator text has been committed as a non-build-input text archive at:
 
 - `docs/archive/Pasted-text-10.original-source.txt`
 - [Open archived original source](https://github.com/alory11-bot/VLink-Consent-Manager/blob/recovery/preserve-original-source/docs/archive/Pasted-text-10.original-source.txt)
 
 The archive is kept as `.txt`, is not included by Gradle, and does not activate or compile its generated behaviors. The Files reader normalized line endings during retrieval; the archive has 1,031 lines and the same readable source content, but is not represented as a byte-for-byte forensic copy. The untouched Library artifact remains the authoritative original.
 
-A separate static review is available at `docs/original-source-security-review.md`, covering protocol, permissions, transport, data storage, remote commands, release readiness and the unimplemented manifest references.
+A separate static review is available at `docs/original-source-security-review.md`, covering protocol, permissions, transport, data storage, remote commands, release readiness and the unimplemented manifest references. The 31 extracted source bodies are also separately preserved under `docs/archive/original-generated-source/`. See `docs/original-source-provenance.md` for authorship and integrity findings.
 
 
 ## Safe source components restored to original project paths
