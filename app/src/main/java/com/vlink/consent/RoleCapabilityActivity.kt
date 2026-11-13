@@ -312,6 +312,7 @@ class RoleCapabilityActivity : ComponentActivity() {
         var approvalTitle by remember { mutableStateOf<String?>(null) }
         var approvalDigits by remember { mutableStateOf("") }
         var approvalAction by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
+        val localDeviceShortId = remember { LocalDeviceIdentityStore(this@RoleCapabilityActivity).getOrCreate().shortId }
 
         val transport = remember {
             NearbyP2pTransport(this@RoleCapabilityActivity, object : NearbyP2pTransport.Listener {
@@ -380,6 +381,7 @@ class RoleCapabilityActivity : ComponentActivity() {
         Card(shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("اتصال مستقیم دستگاه‌ها", fontWeight = FontWeight.Bold, color = RoleInk)
+                Text("شناسه پایدار همین نصب: $localDeviceShortId", color = RoleMuted, style = MaterialTheme.typography.labelSmall)
                 Text(
                     if (role == DeviceRole.MASTER) "این گوشی مستر است و اتصال مستقیم اسلیوها را می‌پذیرد."
                     else "این گوشی اسلیو است و مسترهای نزدیک را پیدا می‌کند.",
