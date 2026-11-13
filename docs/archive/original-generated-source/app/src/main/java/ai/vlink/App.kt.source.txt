@@ -1,0 +1,21 @@
+package ai.vlink
+
+import android.app.Application
+import ai.vlink.core.Config
+import ai.vlink.data.LocalDb
+import ai.vlink.net.Crypto
+import kotlinx.coroutines.runBlocking
+import org.osmdroid.config.Configuration
+
+class App : Application() {
+    lateinit var db: LocalDb
+    lateinit var key: ByteArray
+
+    override fun onCreate() {
+        super.onCreate()
+        db = LocalDb(this)
+        val saved = runBlocking { Config.psk(this) }
+        key = saved ?: Crypto.newKey().also { runBlocking { Config.setPsk(this@App, it) } }
+        Configuration.getInstance().userAgentValue = packageName
+    }
+}

@@ -1,0 +1,34 @@
+package ai.vlink.net
+
+import android.content.Context
+import ai.vlink.core.Notif
+import ai.vlink.data.LocalDb
+import org.json.JSONObject
+import java.io.File
+
+class EventSink(private val ctx: Context, private val key: ByteArray, private val db: LocalDb) {
+
+    fun ingest(deviceId: String, blob: ByteArray) {
+        val plain = Crypto.open(key, blob) ?: return
+        val j = runCatching { JSONObject(String(plain)) }.getOrNull() ?: return
+        deliver(deviceId, j.optString("kind"), j.optJSONObject("payload") ?: JSONObject())
+    }
+
+    fun deliver(deviceId: String, kind: String, payload: JSONObject, mediaPath: String? = null) {
+        db.addEvent(deviceId, kind, payload.toString(), mediaPath)
+        Notif.event(ctx, kind, payload)
+    }
+
+    fun saveUpload(deviceId: String, tmp: File, mime: String) {
+        val dir = File(ctx.filesDir, "media").apply { mkdirs() }
+        val ext = mime.substringAfter('/', "bin")
+        val dst = File(dir, System.currentTimeMillis().toString() + "." + ext)
+        tmp.renameTo(dst)
+        val kind = when {
+            mime.startsWith("video") -> "video"
+            mime.startsWith("audio") -> "audio"
+            else -> "photo"
+        }
+        deliver(deviceId, kind, JSONObject().put("mime", mime), dst.absolutePath)
+    }
+}

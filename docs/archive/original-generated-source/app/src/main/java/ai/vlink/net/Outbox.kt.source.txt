@@ -1,0 +1,57 @@
+package ai.vlink.net
+
+import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.io.File
+
+class Outbox(private val ctx: Context, private val key: ByteArray) {
+    private val dir = File(ctx.filesDir, "outbox").apply { mkdirs() }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    fun put(kind: String, payload: JSONObject, media: File? = null, mime: String? = null) {
+        val env = JSONObject().put("kind", kind).put("payload", payload)
+        if (media != null && media.exists()) {
+            env.put("media", media.absolutePath)
+            env.put("mime", mime)
+        }
+        File(dir, System.currentTimeMillis().toString() + "_" + kind + ".bin")
+            .writeBytes(Crypto.seal(key, env.toString().toByteArray()))
+    }
+
+    fun size() = dir.listFiles()?.size ?: 0
+
+    fun start(t: Transport) {
+        scope.launch {
+            var backoff = 3_000L
+            while (isActive) {
+                var progressed = false
+                for (f in (dir.listFiles()?.sortedBy { it.name } ?: emptyList())) {
+                    val env = Crypto.open(key, f.readBytes())
+                        ?.let { runCatching { JSONObject(String(it)) }.getOrNull() }
+                    if (env == null) { f.delete(); continue }
+
+                    val mp = env.optString("media").ifBlank { null }
+                    if (mp != null) {
+                        val mf = File(mp)
+                        if (!mf.exists()) { f.delete(); continue }
+                        if (t.upload(mf, env.optString("mime", "application/octet-stream"))) {
+                            mf.delete(); f.delete(); progressed = true
+                        } else break
+                    } else {
+                        if (t.send(env.getString("kind"), env.getJSONObject("payload"))) {
+                            f.delete(); progressed = true
+                        } else break
+                    }
+                }
+                backoff = if (progressed) 3_000L else (backoff * 2).coerceAtMost(90_000L)
+                delay(backoff)
+            }
+        }
+    }
+}

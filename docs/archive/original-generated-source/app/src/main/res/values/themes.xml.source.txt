@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.VLink" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0f1115</item>
+        <item name="android:windowBackground">#0f1115</item>
+    </style>
+</resources>

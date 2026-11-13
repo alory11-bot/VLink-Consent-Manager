@@ -3,7 +3,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feat/master-slave-capability-consent-v1 ]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 8.9
       - name: Unit tests
-        run: gradle testDebugUnitTest
+        run: ./gradlew testDebugUnitTest
       - name: Assemble debug APK
-        run: gradle assembleDebug
+        run: ./gradlew assembleDebug
+      - name: Package Android Studio project
+        run: |
+          zip -qr VLink-AndroidStudio.zip . -x ".git/*" "*/build/*" ".gradle/*" "*/.gradle/*" "VLink-AndroidStudio.zip"
+      - name: Upload Android Studio project and debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VLink-AndroidStudio-build
+          path: |
+            VLink-AndroidStudio.zip
+            app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,62 @@
+package ai.vlink.net
+
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.MqttAsyncClient
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
+import org.json.JSONObject
+
+class MqttLink(
+    private val topic: String,
+    private val clientId: String,
+    private val isMaster: Boolean,
+    private val onBlob: (from: String, blob: ByteArray) -> Unit
+) {
+    private var client: MqttAsyncClient? = null
+    private val sub = "vlink/" + topic + "/" + (if (isMaster) "c2m" else "m2c")
+    private val pub = "vlink/" + topic + "/" + (if (isMaster) "m2c" else "c2m")
+    @Volatile var alive = false
+
+    fun connect() {
+        runCatching {
+            val c = MqttAsyncClient(ai.vlink.core.Const.MQTT, clientId, MemoryPersistence())
+            c.setCallback(object : MqttCallbackExtended {
+                override fun connectComplete(re: Boolean, s: String) {
+                    alive = true
+                    runCatching { c.subscribe(sub, 1) }
+                }
+                override fun connectionLost(t: Throwable?) { alive = false }
+                override fun deliveryComplete(t: IMqttDeliveryToken?) {}
+                override fun messageArrived(t: String, m: MqttMessage) {
+                    runCatching {
+                        val j = JSONObject(String(m.payload))
+                        onBlob(j.optString("from"), Crypto.unb64(j.getString("b")))
+                    }
+                }
+            })
+            val o = MqttConnectOptions().apply {
+                isAutomaticReconnect = true
+                isCleanSession = true
+                keepAliveInterval = 30
+                connectionTimeout = 15
+            }
+            c.connect(o).waitForCompletion(12_000)
+            c.subscribe(sub, 1)
+            client = c
+            alive = true
+        }
+    }
+
+    fun send(to: String, blob: ByteArray): Boolean {
+        if (!alive) return false
+        return runCatching {
+            val p = JSONObject().put("from", clientId).put("b", Crypto.b64(blob)).toString().toByteArray()
+            client?.publish(pub, MqttMessage(p).apply { qos = 1 })
+            true
+        }.getOrDefault(false)
+    }
+
+    fun close() { alive = false; runCatching { client?.disconnect() }; client = null }
+}

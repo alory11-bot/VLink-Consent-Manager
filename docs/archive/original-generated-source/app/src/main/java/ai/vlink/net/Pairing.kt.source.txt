@@ -1,0 +1,25 @@
+package ai.vlink.net
+
+import android.graphics.Bitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import org.json.JSONObject
+
+data class PairPayload(val psk: ByteArray, val relay: String, val topic: String) {
+    fun encode() = JSONObject().put("v", 1).put("k", Crypto.b64(psk)).put("r", relay).put("t", topic).toString()
+
+    fun qr(size: Int = 800): Bitmap {
+        val m = QRCodeWriter().encode(encode(), BarcodeFormat.QR_CODE, size, size)
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        for (x in 0 until size) for (y in 0 until size)
+            bmp.setPixel(x, y, if (m[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+        return bmp
+    }
+
+    companion object {
+        fun decode(s: String) = runCatching {
+            val j = JSONObject(s)
+            PairPayload(Crypto.unb64(j.getString("k")), j.getString("r"), j.getString("t"))
+        }.getOrNull()
+    }
+}

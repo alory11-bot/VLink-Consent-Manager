@@ -1,0 +1,31 @@
+package ai.vlink.core
+
+import android.content.Context
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.first
+
+private val Ctx.store by preferencesDataStore("vlink")
+
+object Config {
+    val ROLE = stringPreferencesKey("role")
+    val PSK = stringPreferencesKey("psk")
+    val DEVICE_ID = stringPreferencesKey("did")
+    val TOKEN = stringPreferencesKey("tok")
+    val RELAY = stringPreferencesKey("relay")
+    val MQTT_TOPIC = stringPreferencesKey("mtopic")
+    val MASTER_TOKEN = stringPreferencesKey("mtok")
+
+    suspend fun s(c: Context, k: Preferences.Key<String>) = c.store.data.first()[k].orEmpty()
+    suspend fun put(c: Context, k: Preferences.Key<String>, v: String) { c.store.edit { it[k] = v } }
+
+    suspend fun role(c: Context) = s(c, ROLE)
+    suspend fun relay(c: Context) = s(c, RELAY)
+    suspend fun token(c: Context) = s(c, TOKEN)
+    suspend fun deviceId(c: Context) = s(c, DEVICE_ID)
+    suspend fun mqttTopic(c: Context) = s(c, MQTT_TOPIC)
+    suspend fun masterToken(c: Context) = s(c, MASTER_TOKEN)
+
+    suspend fun psk(c: Context): ByteArray? = s(c, PSK).ifBlank { null }?.let { net.Crypto.unb64(it) }
+    suspend fun setPsk(c: Context, k: ByteArray) = put(c, PSK, net.Crypto.b64(k))
+}

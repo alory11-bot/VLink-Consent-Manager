@@ -1,0 +1,88 @@
+package ai.vlink.net
+
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.File
+import java.util.concurrent.TimeUnit
+
+class Transport(
+    private val ctx: Context,
+    private val key: ByteArray,
+    private val token: String
+) {
+    @Volatile private var lan: String? = null
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(35, TimeUnit.SECONDS)
+        .build()
+
+    fun lanFound(host: String) { lan = host }
+
+    private suspend fun base(): List<String> = buildList {
+        lan?.let { add("http://" + it + ":" + ai.vlink.core.Const.PORT) }
+        ai.vlink.core.Config.relay(ctx).ifBlank { null }?.let { add(it.trimEnd('/')) }
+    }
+
+    suspend fun send(kind: String, payload: JSONObject): Boolean = withContext(Dispatchers.IO) {
+        val body = Crypto.seal(key, JSONObject().put("kind", kind).put("payload", payload).toString().toByteArray())
+        for (b in base()) {
+            val ok = runCatching {
+                http.newCall(Request.Builder().url("$b/event")
+                    .header("x-token", token)
+                    .post(body.toRequestBody("application/octet-stream".toMediaTypeOrNull()))
+                    .build()).execute().use { it.isSuccessful }
+            }.getOrDefault(false)
+            if (ok) return@withContext true
+        }
+        false
+    }
+
+    suspend fun upload(f: File, mime: String): Boolean = withContext(Dispatchers.IO) {
+        for (b in base()) {
+            val ok = runCatching {
+                http.newCall(Request.Builder().url("$b/media")
+                    .header("x-token", token).header("x-mime", mime)
+                    .post(f.asRequestBody(mime.toMediaTypeOrNull()))
+                    .build()).execute().use { it.isSuccessful }
+            }.getOrDefault(false)
+            if (ok) return@withContext true
+        }
+        false
+    }
+
+    suspend fun pollCmd(wait: Int): JSONObject? = withContext(Dispatchers.IO) {
+        val h = lan ?: return@withContext null
+        runCatching {
+            http.newCall(Request.Builder()
+                .url("http://" + h + ":" + ai.vlink.core.Const.PORT + "/cmd?wait=" + wait)
+                .header("x-token", token).get().build()).execute().use { r ->
+                if (r.code != 200) null else {
+                    val plain = Crypto.open(key, r.body!!.bytes()) ?: return@withContext null
+                    JSONObject(String(plain))
+                }
+            }
+        }.getOrNull()
+    }
+
+    suspend fun pairOnLan(host: String, name: String, model: String, sdk: Int): Pair<String, String>? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val body = Crypto.seal(key, JSONObject().put("name", name).put("model", model).put("sdk", sdk)
+                    .toString().toByteArray())
+                http.newCall(Request.Builder().url("http://" + host + ":" + ai.vlink.core.Const.PORT + "/pair")
+                    .post(body.toRequestBody("application/octet-stream".toMediaTypeOrNull()))
+                    .build()).execute().use { r ->
+                    if (!r.isSuccessful) return@withContext null
+                    val j = JSONObject(String(Crypto.open(key, r.body!!.bytes()) ?: return@withContext null))
+                    j.getString("deviceId") to j.getString("token")
+                }
+            }.getOrNull()
+        }
+}

@@ -1,0 +1,13 @@
+package ai.vlink.core
+
+object Const {
+    const val PORT = 8765
+    const val NSD_TYPE = "_vlink._tcp"
+    const val MQTT = "ssl://broker.hivemq.com:8883"
+    const val CH_HUB = "vlink_hub"
+    const val CH_LINK = "vlink_link"
+    const val CH_EVT = "vlink_evt"
+    const val ID_HUB = 1001
+    const val ID_LINK = 1002
+    const val ID_CAP = 1003
+}
