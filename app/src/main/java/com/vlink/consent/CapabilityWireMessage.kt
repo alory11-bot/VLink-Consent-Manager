@@ -42,8 +42,8 @@ data class CapabilityWireMessage(
         val validTransition = when (type) {
             CapabilityMessageType.REQUEST -> senderRole == DeviceRole.MASTER && status == CapabilityStatus.REQUESTED && revision == 1L
             CapabilityMessageType.DECISION -> senderRole == DeviceRole.SLAVE &&
-                (status == CapabilityStatus.GRANTED || status == CapabilityStatus.REJECTED) && revision >= 2L
-            CapabilityMessageType.REVOKE -> senderRole == DeviceRole.SLAVE && status == CapabilityStatus.REJECTED && revision >= 3L
+                (status == CapabilityStatus.GRANTED || status == CapabilityStatus.REJECTED) && revision == 2L
+            CapabilityMessageType.REVOKE -> senderRole == DeviceRole.SLAVE && status == CapabilityStatus.REJECTED && revision == 3L
         }
         if (!validTransition) return "invalid role/status transition"
         return null
