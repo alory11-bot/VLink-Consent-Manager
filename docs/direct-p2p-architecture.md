@@ -10,6 +10,22 @@
 ## Current implementation boundary
 This change adds the transport adapter, topology policy, dependency, and manifest declarations. It does not yet wire the adapter into the Compose screens, request runtime permissions, persist trusted peer identities, or deliver a production background service. Message payloads are raw bounded bytes (32 KiB maximum) and must only be sent after the application-level capability consent gate is integrated. Do not describe this commit as a completed remote-control product.
 
+## Persistent local identity (V1 foundation)
+
+- Each installation now creates a random UUID once and stores it through `SecureStore` (AES-GCM with an Android Keystore-backed key).
+- The connection screen displays a short form of that local identifier for diagnostics and future pairing workflows.
+- The identifier is local metadata only. It is not a secret, public key, peer credential, or proof that a remote device is trusted.
+- Reinstalling the app or clearing its app data may create a new installation identity.
+- This phase deliberately does not auto-approve peers, persist trusted peers, or reconnect silently. Nearby authentication digits must still be compared and approved on each connection.
+
+### Next security milestone
+
+1. Generate a per-install asymmetric key pair in Android Keystore.
+2. Exchange public-key fingerprints only after the user approves the Nearby authentication digits.
+3. Persist a peer trust record only after explicit confirmation on both devices.
+4. Bind subsequent sessions to a challenge-response proof and a versioned pairing transcript.
+5. Keep reconnect disabled until replay protection, key rotation/revocation, and negative-path tests are complete.
+
 ## Permissions
 Nearby Connections requires Bluetooth and nearby-device/Wi-Fi permissions that vary by Android version. Manifest declarations are not runtime grants. The app must explain the purpose and request the applicable permissions at first use. Users can revoke them in Android Settings.
 
