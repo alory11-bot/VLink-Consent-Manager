@@ -41,6 +41,8 @@ class CapabilityWireMessageTest {
         val reject = message(DeviceRole.SLAVE, CapabilityMessageType.DECISION, CapabilityStatus.REJECTED, 2)
         assertNull(grant.validate(room, slaveId, DeviceRole.SLAVE, now))
         assertNull(reject.validate(room, slaveId, DeviceRole.SLAVE, now))
+        assertNotNull(message(DeviceRole.SLAVE, CapabilityMessageType.DECISION, CapabilityStatus.GRANTED, 4)
+            .validate(room, slaveId, DeviceRole.SLAVE, now))
         assertNotNull(message(DeviceRole.MASTER, CapabilityMessageType.DECISION, CapabilityStatus.GRANTED, 2)
             .validate(room, masterId, DeviceRole.MASTER, now))
     }
