@@ -12,6 +12,8 @@ data class InternetInvite(
     val issuedAtMillis: Long,
     val expiresAtMillis: Long
 ) {
+    override fun toString(): String = "InternetInvite(room=$room, token=[REDACTED], issuedAtMillis=$issuedAtMillis, expiresAtMillis=$expiresAtMillis)"
+
     fun isValidAt(nowMillis: Long): Boolean =
         ROOM_PATTERN.matches(room) &&
             TOKEN_PATTERN.matches(token) &&
