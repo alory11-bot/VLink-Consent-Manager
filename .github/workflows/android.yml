@@ -3,7 +3,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feat/master-slave-capability-consent-v1 ]
   workflow_dispatch:
 
 jobs:
