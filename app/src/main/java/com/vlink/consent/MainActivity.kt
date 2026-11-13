@@ -127,10 +127,12 @@ class MainActivity : ComponentActivity() {
                             Button(onClick = {
                                 val issued = store.get("invite") ?: ""
                                 val issuedAt = store.get("invite_at")?.toLongOrNull() ?: 0L
-                                val valid = PairingCode.isValid(code.trim()) && code.trim() == issued &&
-                                    System.currentTimeMillis() - issuedAt in 0L..300_000L
+                                val valid = PairingCode.isValidForWindow(code.trim(), issuedAt, System.currentTimeMillis()) &&
+                                    code.trim() == issued
                                 message = if (valid) {
-                                    log("CODE_VALIDATED", "کد دعوت در همین دستگاه اعتبارسنجی شد")
+                                    store.remove("invite")
+                                    store.remove("invite_at")
+                                    log("CODE_VALIDATED", "کد دعوت یک‌بارمصرف مصرف شد")
                                     "کد محلی معتبر است؛ انتقال به دستگاه دیگر هنوز پیاده‌سازی نشده است."
                                 } else "کد نامعتبر یا منقضی شده است."
                             }, enabled = code.isNotBlank()) { Text("اعتبارسنجی کد") }
