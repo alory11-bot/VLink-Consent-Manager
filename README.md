@@ -21,7 +21,7 @@ This is an **in-progress engineering prototype**, not a production-ready or full
 - TURN is not active. Some NAT/firewall combinations, especially symmetric NAT and carrier-grade NAT, may prevent direct P2P from connecting.
 - No real two-physical-device test across separate Internet connections has been completed.
 - The transport supports one Master with up to eight Slave PeerConnections, but per-peer consent state and a complete capability message protocol are not yet wired to the UI.
-- Capability cards still represent local consent state only. Camera, microphone, location, notifications, and file transfer are not activated.
+- A versioned capability-control message envelope and authenticated DataChannel send/receive hooks are implemented, including sender-role, device identity, session, timestamp, and revision validation. The per-peer UI/state reducer and end-to-end consent synchronization are still incomplete. Capability cards still represent local consent state only. Camera, microphone, location, notifications, and file transfer are not activated.
 - Persistent device IDs are exchanged and bound to the invite HMAC proof; long-term trusted-peer key storage, revocation, and silent reconnect are not implemented.
 - No foreground/background service or guaranteed background connectivity is implemented.
 
