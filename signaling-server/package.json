@@ -1,0 +1,13 @@
+{
+  "name": "vlink-signaling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ephemeral WebRTC signaling only; never relays application payloads",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "ws": "8.18.0" }
+}

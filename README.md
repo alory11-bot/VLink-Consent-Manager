@@ -1,42 +1,48 @@
 # VLink Consent Manager
 
-VLink is a Persian RTL Android prototype for transparent, consent-first device onboarding.
+VLink is a Persian RTL Android prototype for consent-first device connections over the public Internet.
 
-## Included in this build
+## Current Internet transport milestone
 
-- Role-first onboarding with distinct Master and Slave dashboards.
-- Master capability request controls and Slave approve/reject/revoke decisions.
-- Capability policy guards: only Master can request; only Slave can decide or revoke.
-- Independent consent states for file transfer, messaging, location sharing, camera sessions, microphone sessions and notification sharing.
-- Encrypted local preferences backed by Android Keystore and a local audit history capped at 30 events.
-- Existing local invitation-code flow and tested QR invitation-envelope primitives.
-- Unit tests for pairing primitives and Master/Slave permission boundaries.
-- CI unit tests, debug APK assembly, Android Studio ZIP packaging and artifact upload.
+- Internet-only transport: Bluetooth, Nearby Connections, and nearby-device permissions are removed from the active Android app.
+- WebRTC PeerConnection and DataChannel are used for direct P2P application traffic.
+- STUN/ICE attempts direct connectivity. TURN is deliberately not enabled yet.
+- A five-minute Master invite carries a random 256-bit secret. The original secret is not sent to the signaling service; only a SHA-256-derived room credential is sent.
+- The WebSocket signaling service exchanges SDP/ICE metadata only. It does not accept or relay application payloads.
+- Both peers exchange fresh nonces and persistent per-install device IDs, then prove possession of the invite secret using HMAC-SHA256 over the DataChannel before application bytes are accepted.
+- The Android UI lets the Master create/copy an invite and the Slave paste it, using a configured secure WSS signaling URL.
+- The signaling service is in signaling-server/, includes a Dockerfile, and has automated Node.js tests.
 
-## Important implementation boundary
+## Important limitations
 
-This release is still a **local prototype**, not a working cross-device product. Role selection, capability requests and consent decisions are stored only on the current phone. They do not synchronize to a second device. The capability cards record authorization intent only; they do not activate camera, microphone, location, notification access or file transfer. No Android runtime permissions for those sensitive capabilities are requested by this prototype.
+This is an **in-progress engineering prototype**, not a production-ready or fully verified cross-device product.
 
-The short invitation code is created and checked against local storage on the same installation. The 256-bit QR envelope is a tested protocol primitive but is not yet wired to QR rendering/scanning or a network transport. No remote peer authentication, TLS session, server-side replay prevention, cross-device session, or remote data transfer is implemented.
+- A public TLS/WSS signaling endpoint must be deployed and configured in both phones. The repository contains the service source and container definition; it has not been deployed to a public host.
+- TURN is not active. Some NAT/firewall combinations, especially symmetric NAT and carrier-grade NAT, may prevent direct P2P from connecting.
+- No real two-physical-device test across separate Internet connections has been completed.
+- The transport supports one Master with up to eight Slave PeerConnections, but per-peer consent state and a complete capability message protocol are not yet wired to the UI.
+- Capability cards still represent local consent state only. Camera, microphone, location, notifications, and file transfer are not activated.
+- Persistent device IDs are exchanged and bound to the invite HMAC proof; long-term trusted-peer key storage, revocation, and silent reconnect are not implemented.
+- No foreground/background service or guaranteed background connectivity is implemented.
 
-The application intentionally excludes covert monitoring, keylogging, notification/SMS/call-log harvesting, hidden camera or microphone capture, stealth location tracking, remote wipe, and arbitrary remote command execution.
+## Signaling service
 
-## Open in Android Studio
+See signaling-server/README.md.
 
-1. Download and extract `VLink-AndroidStudio.zip` from the GitHub Actions artifact.
-2. Open the extracted project root (the folder containing `settings.gradle.kts`) in Android Studio.
-3. Set Gradle JDK to **17**.
-4. Install Android SDK Platform **35** and accept SDK licenses.
-5. Allow Gradle sync to download dependencies, then select the `app` run configuration.
-6. Run on Android 8.0 (API 26) or newer.
+For production, deploy the Node service behind a TLS-terminating reverse proxy and configure the app with the resulting WSS endpoint. The service keeps rooms in memory for up to five minutes, permits one Master and up to eight Slaves, and forwards only offer, answer, ICE candidate, and leave messages. It is a signaling component, not a TURN relay.
 
-The packaged ZIP contains the Gradle 8.9 Wrapper generated by CI, including its wrapper JAR. The repository source branch itself does not commit the binary wrapper JAR.
+## Android build
+
+- Minimum Android: API 26 (Android 8.0)
+- Compile/target SDK: 35
+- JDK: 17
+- WebRTC Android SDK: pinned dependency in app/build.gradle.kts
+
+The GitHub Actions workflow runs Android unit tests, builds the debug APK, packages the Android Studio project, and separately runs signaling-service tests.
 
 ## Build from terminal
 
-On a machine with JDK 17 and Android SDK 35 installed:
-
-```bash
+```sh
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug
 ```
@@ -44,19 +50,19 @@ On a machine with JDK 17 and Android SDK 35 installed:
 On Windows PowerShell:
 
 ```powershell
-.\\gradlew.bat testDebugUnitTest
-.\\gradlew.bat assembleDebug
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat assembleDebug
 ```
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The debug APK is written to app/build/outputs/apk/debug/app-debug.apk.
 
-## Remaining milestones before a real cross-device release
+## Security boundary
 
-1. Integrate QR rendering and camera-based scanning with clear device identity and approval on both devices.
-2. Exchange a short-lived challenge over an authenticated channel and enforce one-time consumption/replay prevention.
-3. Establish mutually authenticated TLS and verify peer identity before data exchange.
-4. Implement bilateral session revocation and prove invalidation with integration tests.
-5. Add Android instrumentation tests for Keystore persistence, consent lifecycle and revocation.
-6. Add dependency scanning, a signed release pipeline and an independent security review.
+- Production signaling must use WSS; cleartext traffic is disabled in the Android manifest.
+- Treat the invite string as a bearer secret and share it only with the intended Slave.
+- Never log invite strings, credentials, SDP, ICE candidates, or application payloads.
+- The signaling service is not trusted to authenticate a peer; the DataChannel HMAC proof is the peer possession check.
+- Transport authentication does not grant any device capability. Each sensitive capability requires a separate, explicit consent workflow.
+- Do not deploy as a production security product until CI passes on the final commit, a public WSS endpoint is configured, two-device/network testing passes, capability consent is synchronized, and an independent security review is complete.
 
-Do not deploy this prototype as a production security product until these milestones and independent testing have passed. See [SECURITY.md](SECURITY.md) for the threat boundary and required controls.
+See docs/internet-p2p-architecture.md for the detailed route design and remaining milestones.

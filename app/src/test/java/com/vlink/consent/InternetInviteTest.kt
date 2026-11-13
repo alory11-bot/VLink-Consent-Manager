@@ -1,0 +1,26 @@
+package com.vlink.consent
+
+import org.junit.Assert.*
+import org.junit.Test
+
+class InternetInviteTest {
+    @Test fun inviteRoundTripsAndExpires() {
+        val now = System.currentTimeMillis()
+        val invite = InternetInvite.create(now)
+        assertTrue(invite.isValidAt(now))
+        val parsed = InternetInvite.parse(invite.toShareText())
+        assertNotNull(parsed)
+        assertEquals(invite.room, parsed!!.room)
+        assertEquals(invite.token, parsed.token)
+        assertEquals(43, invite.signalingCredential.length)
+        assertNotEquals(invite.token, invite.signalingCredential)
+        assertFalse(invite.toString().contains(invite.token))
+        assertFalse(invite.isValidAt(now + 300_000L))
+    }
+
+    @Test fun rejectsMalformedAndExpiredInvites() {
+        assertNull(InternetInvite.parse("vlink://internet?room=bad&token=x&iat=1&exp=2"))
+        val expired = InternetInvite.create(System.currentTimeMillis() - 600_000L)
+        assertNull(InternetInvite.parse(expired.toShareText()))
+    }
+}
