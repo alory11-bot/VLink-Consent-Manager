@@ -127,7 +127,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
     fun sendBytes(endpointId: String, bytes: ByteArray) {
         require(endpointId in connected) { "Endpoint is not connected" }
-        require(bytes.isNotEmpty() && bytes.size <= MAX_BYTES) { "Payload must be between 1 byte and 1 MiB" }
+        require(bytes.isNotEmpty() && bytes.size <= MAX_BYTES) { "Payload must be between 1 byte and 32 KiB" }
         client.sendPayload(endpointId, Payload.fromBytes(bytes))
             .addOnFailureListener { listener.onStatus("ارسال مستقیم ناموفق بود: ${it.localizedMessage}") }
     }
@@ -156,6 +156,6 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
     companion object {
         const val SERVICE_ID = "com.vlink.consent.direct.v1"
-        const val MAX_BYTES = 1024 * 1024
+        const val MAX_BYTES = 32 * 1024
     }
 }
