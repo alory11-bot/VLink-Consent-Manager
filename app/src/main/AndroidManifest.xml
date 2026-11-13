@@ -6,7 +6,11 @@
         android:label="VLink"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:windowLightStatusBar="false"
+        android:windowLightNavigationBar="false"
+        android:statusBarColor="#091426"
+        android:navigationBarColor="#091426"
+        android:theme="@android:style/Theme.Material.NoActionBar">
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".RoleCapabilityActivity" android:exported="true">
             <intent-filter>
