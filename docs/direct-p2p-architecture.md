@@ -8,7 +8,7 @@
 - If direct connectivity cannot be established (range, radio, permissions, Play services availability, OEM restrictions), VLink reports failure. It must not silently fall back to a relay.
 
 ## Current implementation boundary
-This change adds the transport adapter, topology policy, dependency, and manifest declarations. It does not yet wire the adapter into the Compose screens, request runtime permissions, persist trusted peer identities, or deliver a production background service. Message payloads are raw bounded bytes (1 MiB maximum) and must only be sent after the application-level capability consent gate is integrated. Do not describe this commit as a completed remote-control product.
+This change adds the transport adapter, topology policy, dependency, and manifest declarations. It does not yet wire the adapter into the Compose screens, request runtime permissions, persist trusted peer identities, or deliver a production background service. Message payloads are raw bounded bytes (32 KiB maximum) and must only be sent after the application-level capability consent gate is integrated. Do not describe this commit as a completed remote-control product.
 
 ## Permissions
 Nearby Connections requires Bluetooth and nearby-device/Wi-Fi permissions that vary by Android version. Manifest declarations are not runtime grants. The app must explain the purpose and request the applicable permissions at first use. Users can revoke them in Android Settings.
