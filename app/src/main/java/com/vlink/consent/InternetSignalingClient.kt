@@ -47,7 +47,7 @@ class InternetSignalingClient(
                 val accepted = webSocket.send(JSONObject()
                     .put("type", type)
                     .put("room", invite.room)
-                    .put("token", invite.token)
+                    .put("token", invite.signalingCredential)
                     .toString())
                 if (!accepted) listener.onError("SEND_FAILED", "Could not send room authentication")
             }
