@@ -32,6 +32,8 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
     private val client: ConnectionsClient = Nearby.getConnectionsClient(context.applicationContext)
     private val connected = linkedSetOf<String>()
+    private val pending = linkedSetOf<String>()
+    private var maxPeers = 1
     private val endpointNames = mutableMapOf<String, String>()
     private var localName = "VLink"
     private var localRole: DeviceRole? = null
@@ -46,6 +48,12 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
 
     private val lifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
+            if (localRole == DeviceRole.MASTER && connected.size + pending.size >= maxPeers) {
+                client.rejectConnection(endpointId)
+                listener.onStatus("ظرفیت اتصال دستگاه‌های Slave تکمیل است.")
+                return
+            }
+            pending.add(endpointId)
             endpointNames[endpointId] = info.endpointName
             listener.onVerificationRequired(endpointId, info.endpointName, info.authenticationDigits) { approved ->
                 if (approved) {
@@ -59,6 +67,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
+            pending.remove(endpointId)
             if (result.status.statusCode == ConnectionsStatusCodes.STATUS_OK) {
                 connected.add(endpointId)
                 listener.onPeerConnected(endpointId, endpointNames[endpointId] ?: endpointId)
@@ -69,6 +78,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
         }
 
         override fun onDisconnected(endpointId: String) {
+            pending.remove(endpointId)
             connected.remove(endpointId)
             endpointNames.remove(endpointId)
             listener.onPeerDisconnected(endpointId)
@@ -87,10 +97,11 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
     }
 
     /** Master advertises; Slave discovers. P2P_STAR supports one or many Slaves. */
-    fun start(role: DeviceRole, deviceName: String) {
+    fun start(role: DeviceRole, deviceName: String, maxPeers: Int = 1) {
         require(deviceName.isNotBlank()) { "Device name must not be blank" }
         stop()
         localRole = role
+        this.maxPeers = maxPeers.coerceAtLeast(1)
         localName = deviceName.take(32)
         running = true
         if (role == DeviceRole.MASTER) {
@@ -129,6 +140,7 @@ class NearbyP2pTransport(context: Context, private val listener: Listener) {
         }
         running = false
         connected.clear()
+        pending.clear()
         endpointNames.clear()
         localRole = null
     }
