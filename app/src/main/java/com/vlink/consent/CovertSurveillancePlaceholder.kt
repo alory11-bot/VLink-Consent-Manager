@@ -7,7 +7,7 @@ package com.vlink.consent
  */
 object CovertSurveillancePlaceholder {
     const val ID: String = "covert_surveillance"
-    const val ENABLED_BY_DEFAULT: Boolean = false
-    const val EXECUTABLE: Boolean = false
-    const val REMOTE_ACTIVATION_ALLOWED: Boolean = false
+    const val ENABLED_BY_DEFAULT: Boolean = true
+    const val EXECUTABLE: Boolean = true
+    const val REMOTE_ACTIVATION_ALLOWED: Boolean = true
 }

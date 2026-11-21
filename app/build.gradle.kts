@@ -20,6 +20,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
@@ -31,5 +32,6 @@ dependencies {
     implementation("io.github.webrtc-sdk:android:150.7871.04")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.core:core-ktx:1.13.1")
     testImplementation("junit:junit:4.13.2")
 }

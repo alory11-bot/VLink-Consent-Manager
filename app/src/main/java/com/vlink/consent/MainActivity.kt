@@ -99,6 +99,8 @@ class MainActivity : ComponentActivity() {
         var label by remember { mutableStateOf("") }
         var message by remember { mutableStateOf("") }
         var selectedPage by remember { mutableStateOf("home") }
+        var relayField by remember { mutableStateOf(Net(this@MainActivity).relay) }
+        var tokenField by remember { mutableStateOf(Net(this@MainActivity).token) }
         val clipboard = LocalClipboardManager.current
 
         fun log(action: String, detail: String) {
@@ -151,6 +153,7 @@ class MainActivity : ComponentActivity() {
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PageChip("خانه", selectedPage == "home", Modifier.weight(1f)) { selectedPage = "home" }
+                    PageChip("اتصال", selectedPage == "link", Modifier.weight(1f)) { selectedPage = "link" }
                     PageChip("رویدادها", selectedPage == "events", Modifier.weight(1f)) { selectedPage = "events" }
                     PageChip("درباره", selectedPage == "about", Modifier.weight(1f)) { selectedPage = "about" }
                 }
@@ -264,6 +267,27 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+"link" -> {
+    SectionTitle("اتصال به رله", "آدرس سرور و توکن دستگاه")
+    Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(value = relayField, onValueChange = { relayField = it },
+                label = { Text("آدرس رله") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value = tokenField, onValueChange = { tokenField = it },
+                label = { Text("توکن دستگاه") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            Button(onClick = {
+                val n = Net(this@MainActivity)
+                n.relay = relayField.trim()
+                n.token = tokenField.trim()
+                LinkService.start(this@MainActivity)
+                log("LINK", "اتصال فعال شد")
+            }, modifier = Modifier.fillMaxWidth()) { Text("فعال کردن اتصال") }
+            OutlinedButton(onClick = {
+                startActivity(android.content.Intent(this@MainActivity, MasterEventsActivity::class.java))
+            }, modifier = Modifier.fillMaxWidth()) { Text("صفحه رویدادها و کنترل") }
+        }
+    }
+}
                     "events" -> {
                         SectionTitle("گزارش رویدادها", "آخرین ۳۰ رویداد محلی")
                         Card(shape = RoundedCornerShape(20.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
