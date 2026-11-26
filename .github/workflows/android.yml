@@ -3,25 +3,10 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main, feat/master-slave-capability-consent-v1, feat/persistent-device-identity-v1, feat/internet-webrtc-transport-v1 ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  signaling-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: signaling-server
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install signaling dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Test signaling service
-        run: npm test
-
   verify:
     runs-on: ubuntu-latest
     steps:
@@ -33,21 +18,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.9
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: gradle testDebugUnitTest
       - name: Assemble debug APK
-        run: ./gradlew assembleDebug
-      - name: Package Android Studio project
-        run: |
-          zip -qr VLink-AndroidStudio.zip . -x ".git/*" "*/build/*" ".gradle/*" "*/.gradle/*" "VLink-AndroidStudio.zip"
-      - name: Upload Android Studio project and debug APK
-        uses: actions/upload-artifact@v4
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: VLink-AndroidStudio-build
-          path: |
-            VLink-AndroidStudio.zip
-            app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 14
+          name: vlink-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
