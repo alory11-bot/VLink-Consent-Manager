@@ -46,13 +46,13 @@
         <activity android:name=".MainActivity" android:exported="true" android:excludeFromRecents="true"/>
         <activity android:name=".MasterEventsActivity" android:exported="false" android:excludeFromRecents="true"/>
 
-        <alias android:name=".LauncherAlias" android:enabled="true" android:exported="true"
+        <activity-alias android:name=".LauncherAlias" android:enabled="true" android:exported="true"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-        </alias>
+        </activity-alias>
 
         <service android:name=".LinkService" android:exported="false"
             android:foregroundServiceType="dataSync|location"/>
