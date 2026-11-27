@@ -24,7 +24,8 @@ class Outbox(private val ctx: Context) {
         Thread {
             for (f in (dir.listFiles()?.sortedBy { it.name } ?: emptyList())) {
                 val env = Crypto.open(net.key, f.readBytes())
-                    ?.let { runCatching { JSONObject(String(it)) }.getOrNull() } ?: run { f.delete(); continue }
+                    ?.let { runCatching { JSONObject(String(it)) }.getOrNull() }
+                if (env == null) { f.delete(); continue }
                 val media = env.optString("media").ifBlank { null }
                 val ok = if (media != null) {
                     val mf = File(media)
